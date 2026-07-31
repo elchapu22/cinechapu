@@ -1,4 +1,4 @@
-import postgres from 'postgres';
+import { createClient } from "@libsql/client";
 import Link from 'next/link';
 
 const limpiarNombre = (nombre) => {
@@ -10,7 +10,11 @@ const limpiarNombre = (nombre) => {
     .trim();
 };
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
+const sql = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
 
 export default async function SeriesPage({ searchParams }) {
@@ -24,41 +28,42 @@ export default async function SeriesPage({ searchParams }) {
   let seriesPaginadas = [];
   let totalSeries = 0;
 
-  // Filtramos exclusivamente las que TIENEN (series) en el nombre
   if (busqueda) {
-    seriesPaginadas = await sql`
-      SELECT * FROM peliculas 
-      WHERE LOWER(nombre) LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`%${busqueda.toLowerCase()}%`}
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`
-      SELECT COUNT(*) FROM peliculas 
-      WHERE LOWER(nombre) LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`%${busqueda.toLowerCase()}%`}
-    `;
-    totalSeries = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
+      args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
+    });
+    seriesPaginadas = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' AND LOWER(nombre) LIKE ?",
+      args: [`%${busqueda.toLowerCase()}%`]
+    });
+    totalSeries = Number(totalResultado.rows[0].count);
   } else if (letra) {
-    seriesPaginadas = await sql`
-      SELECT * FROM peliculas 
-      WHERE LOWER(nombre) LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`${letra.toLowerCase()}%`}
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`
-      SELECT COUNT(*) FROM peliculas 
-      WHERE LOWER(nombre) LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`${letra.toLowerCase()}%`}
-    `;
-    totalSeries = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
+      args: [`${letra.toLowerCase()}%`, porPagina, offset]
+    });
+    seriesPaginadas = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' AND LOWER(nombre) LIKE ?",
+      args: [`${letra.toLowerCase()}%`]
+    });
+    totalSeries = Number(totalResultado.rows[0].count);
   } else {
-    seriesPaginadas = await sql`
-      SELECT * FROM peliculas 
-      WHERE LOWER(nombre) LIKE '%(series)%'
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`SELECT COUNT(*) FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%'`;
-    totalSeries = Number(totalResultado[0].count);
+    // AQUÍ ESTABA EL DETALLE: Ahora también filtramos estrictamente por (series) por defecto
+    const resultado = await sql.execute({
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' ORDER BY id LIMIT ? OFFSET ?",
+      args: [porPagina, offset]
+    });
+    seriesPaginadas = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%'"
+    });
+    totalSeries = Number(totalResultado.rows[0].count);
   }
 
   const totalPaginas = Math.ceil(totalSeries / porPagina) || 1;
@@ -68,25 +73,25 @@ export default async function SeriesPage({ searchParams }) {
     <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
         <header className="w-full border-b border-zinc-800/60 bg-[#090d16]/90 backdrop-blur sticky top-0 z-50">
-  <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-    <Link href="/" className="text-xl font-black tracking-widest text-red-600">NETFLIX PRIVADO</Link>
-    <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
-      <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-      <Link href="/peliculas" className="hover:text-white transition-colors">Películas</Link>
-      <Link href="/series" className="text-white hover:text-red-500 transition-colors">Series</Link>
-      <Link href="/animacion" className="hover:text-white transition-colors">Animación</Link>
-    </nav>
-    <form action="/series" method="GET" className="w-full md:w-72">
-      <input 
-        type="text" 
-        name="busqueda" 
-        defaultValue={busqueda}
-        placeholder="Buscar serie..." 
-        className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
-      />
-    </form>
-  </div>
-</header>
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <Link href="/" className="text-xl font-black tracking-widest text-red-600">NETFLIX PRIVADO</Link>
+            <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
+              <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
+              <Link href="/peliculas" className="hover:text-white transition-colors">Películas</Link>
+              <Link href="/series" className="text-white hover:text-red-500 transition-colors">Series</Link>
+              <Link href="/animacion" className="hover:text-white transition-colors">Animación</Link>
+            </nav>
+            <form action="/series" method="GET" className="w-full md:w-72">
+              <input 
+                type="text" 
+                name="busqueda" 
+                defaultValue={busqueda}
+                placeholder="Buscar serie..." 
+                className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
+              />
+            </form>
+          </div>
+        </header>
 
         <section className="max-w-[1400px] mx-auto px-6 py-8">
           <div className="flex flex-col lg:flex-row gap-8 items-start">

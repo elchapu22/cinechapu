@@ -1,7 +1,20 @@
-import postgres from 'postgres';
+import { createClient } from "@libsql/client";
 import Link from 'next/link';
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
+const limpiarNombre = (nombre) => {
+  if (!nombre) return '';
+  return nombre
+    .replace(/\(series\)/gi, '')
+    .replace(/\(anime\)/gi, '')
+    .replace(/\(infantil\)/gi, '')
+    .trim();
+};
+
+const sql = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
 
 export default async function PeliculasPage({ searchParams }) {
@@ -15,41 +28,41 @@ export default async function PeliculasPage({ searchParams }) {
   let peliculasPaginadas = [];
   let totalPeliculas = 0;
 
-  // Filtramos solo las que NO tienen (series) en el nombre
   if (busqueda) {
-    peliculasPaginadas = await sql`
-      SELECT * FROM peliculas 
-      WHERE LOWER(nombre) NOT LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`%${busqueda.toLowerCase()}%`}
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`
-      SELECT COUNT(*) FROM peliculas 
-      WHERE LOWER(nombre) NOT LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`%${busqueda.toLowerCase()}%`}
-    `;
-    totalPeliculas = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
+      args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
+    });
+    peliculasPaginadas = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ?",
+      args: [`%${busqueda.toLowerCase()}%`]
+    });
+    totalPeliculas = Number(totalResultado.rows[0].count);
   } else if (letra) {
-    peliculasPaginadas = await sql`
-      SELECT * FROM peliculas 
-      WHERE LOWER(nombre) NOT LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`${letra.toLowerCase()}%`}
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`
-      SELECT COUNT(*) FROM peliculas 
-      WHERE LOWER(nombre) NOT LIKE '%(series)%' 
-      AND LOWER(nombre) LIKE ${`${letra.toLowerCase()}%`}
-    `;
-    totalPeliculas = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
+      args: [`${letra.toLowerCase()}%`, porPagina, offset]
+    });
+    peliculasPaginadas = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ?",
+      args: [`${letra.toLowerCase()}%`]
+    });
+    totalPeliculas = Number(totalResultado.rows[0].count);
   } else {
-    peliculasPaginadas = await sql`
-      SELECT * FROM peliculas 
-      WHERE LOWER(nombre) NOT LIKE '%(series)%'
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`SELECT COUNT(*) FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%'`;
-    totalPeliculas = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' ORDER BY id LIMIT ? OFFSET ?",
+      args: [porPagina, offset]
+    });
+    peliculasPaginadas = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%'"
+    });
+    totalPeliculas = Number(totalResultado.rows[0].count);
   }
 
   const totalPaginas = Math.ceil(totalPeliculas / porPagina) || 1;
@@ -59,25 +72,25 @@ export default async function PeliculasPage({ searchParams }) {
     <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
         <header className="w-full border-b border-zinc-800/60 bg-[#090d16]/90 backdrop-blur sticky top-0 z-50">
-  <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-    <Link href="/" className="text-xl font-black tracking-widest text-red-600">NETFLIX PRIVADO</Link>
-    <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
-      <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-      <Link href="/peliculas" className="text-white hover:text-red-500 transition-colors">Películas</Link>
-      <Link href="/series" className="hover:text-white transition-colors">Series</Link>
-      <Link href="/animacion" className="hover:text-white transition-colors">Animacion</Link>
-    </nav>
-    <form action="/peliculas" method="GET" className="w-full md:w-72">
-      <input 
-        type="text" 
-        name="busqueda" 
-        defaultValue={busqueda}
-        placeholder="Buscar película..." 
-        className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
-      />
-    </form>
-  </div>
-</header>
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <Link href="/" className="text-xl font-black tracking-widest text-red-600">NETFLIX PRIVADO</Link>
+            <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
+              <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
+              <Link href="/peliculas" className="text-white hover:text-red-500 transition-colors">Películas</Link>
+              <Link href="/series" className="hover:text-white transition-colors">Series</Link>
+              <Link href="/animacion" className="hover:text-white transition-colors">Animacion</Link>
+            </nav>
+            <form action="/peliculas" method="GET" className="w-full md:w-72">
+              <input 
+                type="text" 
+                name="busqueda" 
+                defaultValue={busqueda}
+                placeholder="Buscar película..." 
+                className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
+              />
+            </form>
+          </div>
+        </header>
 
         <section className="max-w-[1400px] mx-auto px-6 py-8">
           <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -104,7 +117,7 @@ export default async function PeliculasPage({ searchParams }) {
                         <img src={pelicula.foto || imagenGenerica} alt={pelicula.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
                       </div>
                       <div className="p-2.5 flex-1 flex flex-col justify-between">
-                        <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{pelicula.nombre}</h3>
+                        <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(pelicula.nombre)}</h3>
                       </div>
                     </Link>
                   ))}

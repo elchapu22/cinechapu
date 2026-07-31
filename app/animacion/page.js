@@ -1,7 +1,11 @@
-import postgres from 'postgres';
+import { createClient } from "@libsql/client";
 import Link from 'next/link';
 
-const sql = postgres(process.env.DATABASE_URL, { ssl: 'require' });
+const sql = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
 
 const limpiarNombre = (nombre) => {
@@ -19,31 +23,37 @@ export default async function AnimacionPage({ searchParams }) {
   let contenidoPaginado = [];
   let totalContenido = 0;
 
-  // Usamos ILIKE para que no importe si tiene mayúsculas, minúsculas o tildes
   if (busqueda) {
-    contenidoPaginado = await sql`
-      SELECT * FROM peliculas 
-      WHERE (tags ILIKE '%infantil%' OR tags ILIKE '%anime%' OR tags ILIKE '%animacion%' OR tags ILIKE '%animación%')
-      AND nombre ILIKE ${`%${busqueda}%`}
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`
-      SELECT COUNT(*) FROM peliculas 
-      WHERE (tags ILIKE '%infantil%' OR tags ILIKE '%anime%' OR tags ILIKE '%animacion%' OR tags ILIKE '%animación%')
-      AND nombre ILIKE ${`%${busqueda}%`}
-    `;
-    totalContenido = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: `SELECT * FROM peliculas 
+            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%')
+            AND LOWER(nombre) LIKE ? 
+            ORDER BY id LIMIT ? OFFSET ?`,
+      args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
+    });
+    contenidoPaginado = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: `SELECT COUNT(*) as count FROM peliculas 
+            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%')
+            AND LOWER(nombre) LIKE ?`,
+      args: [`%${busqueda.toLowerCase()}%`]
+    });
+    totalContenido = Number(totalResultado.rows[0].count);
   } else {
-    contenidoPaginado = await sql`
-      SELECT * FROM peliculas 
-      WHERE tags ILIKE '%infantil%' OR tags ILIKE '%anime%' OR tags ILIKE '%animacion%' OR tags ILIKE '%animación%'
-      ORDER BY id LIMIT ${porPagina} OFFSET ${offset}
-    `;
-    const totalResultado = await sql`
-      SELECT COUNT(*) FROM peliculas 
-      WHERE tags ILIKE '%infantil%' OR tags ILIKE '%anime%' OR tags ILIKE '%animacion%' OR tags ILIKE '%animación%'
-    `;
-    totalContenido = Number(totalResultado[0].count);
+    const resultado = await sql.execute({
+      sql: `SELECT * FROM peliculas 
+            WHERE LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%' 
+            ORDER BY id LIMIT ? OFFSET ?`,
+      args: [porPagina, offset]
+    });
+    contenidoPaginado = resultado.rows;
+
+    const totalResultado = await sql.execute({
+      sql: `SELECT COUNT(*) as count FROM peliculas 
+            WHERE LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%'`
+    });
+    totalContenido = Number(totalResultado.rows[0].count);
   }
 
   const totalPaginas = Math.ceil(totalContenido / porPagina) || 1;
@@ -58,7 +68,7 @@ export default async function AnimacionPage({ searchParams }) {
               <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
               <Link href="/peliculas" className="hover:text-white transition-colors">Películas</Link>
               <Link href="/series" className="hover:text-white transition-colors">Series</Link>
-              <Link href="/animacion" className="hover:text-white transition-colors">Animacion</Link>
+              <Link href="/animacion" className="text-white hover:text-red-500 transition-colors">Animacion</Link>
             </nav>
             <form action="/animacion" method="GET" className="w-full md:w-72">
               <input 
