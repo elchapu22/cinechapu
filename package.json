@@ -1,8 +1,6 @@
 {
   "name": "mi-netflix-privado",
   "version": "1.0.0",
-  "type": "module",
-  "main": "bot.js",
   "private": true,
   "scripts": {
     "dev": "next dev",
