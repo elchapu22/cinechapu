@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 const db = createClient({
   url: "libsql://catalogo-peliculas-chapu.aws-us-east-1.turso.io",
-  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODUzOTQxNDUsImlkIjoiMDE5ZmIxYzUtMzYwMS03YmM0LTk4ZGYtNWYzNDg4Y2FhZWRjIiwia2lkIjoiOVBRb1FvLUMtdzh5bWFQeWt5dlI3WnBWUXY1ck10M3I4VVdkUHJuakRMUSIsInJpZCI6IjU4ZmJkMDljLWNlMmUtNGJjZS04YjU1LTdkNDUyOTgzYWIxMyJ9.Q80179N0HQxJCmS1H6gsng_iRYPOEx4hXZC6YTZ5uvBhynpgd9Q9wpx90hPB1hZxVnB_MW6vnareXzdZXfU1Dg"
+  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJnaWQiOiI2NmM4NWMwMy1jNzRjLTQ2ZGUtYTA0Yi04Mzc0NWI4NTlmZDAiLCJpYXQiOjE3ODU0OTAzODcsImtpZCI6IjlQUW9Rby1DLXc4eW1hUHlreXZSN1pwVlF2NXJNdDNyOFVXZFBybmpETFEiLCJyaWQiOiIxYjNlM2NmOC01OTQ1LTQxZTUtOTM1MS1iMjYxMzEyMDI3MzQifQ.la9HjEBj4hT1xqRzhWgHBzbAAqguS0NH7RdOx9M4YRtAHZz2PxK7EwlNfHxJ-gk3W6HJ-NfXHLMTVAWSiR3pBA"
 });
 
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
@@ -85,9 +85,35 @@ export default async function DetallePelicula({ params }) {
 
         <div className="md:col-span-2 flex flex-col justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold mb-3">{pelicula.nombre}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">{pelicula.nombre}</h1>
+            
+            <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400 mb-3">
+              {pelicula.anio && pelicula.anio !== "NULL" && (
+                <span className="bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700 text-zinc-300">
+                  {pelicula.anio}
+                </span>
+              )}
+              {pelicula.calificacion && pelicula.calificacion !== "NULL" && (
+                <span className="text-yellow-400 font-semibold flex items-center gap-1">
+                  ⭐ {pelicula.calificacion} / 10
+                </span>
+              )}
+              {pelicula.director && pelicula.director !== "NULL" && (
+                <span className="text-zinc-400">
+                  Director: <strong className="text-zinc-200">{pelicula.director}</strong>
+                </span>
+              )}
+            </div>
+
+            {/* Actores principales */}
+            {pelicula.actores && pelicula.actores !== "NULL" && (
+              <div className="text-xs text-zinc-400 mb-4">
+                Elenco principal: <strong className="text-zinc-300">{pelicula.actores}</strong>
+              </div>
+            )}
+
             <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-              {pelicula.resumen || "Película alojada en canal privado de Telegram."}
+              {pelicula.resumen && pelicula.resumen !== "NULL" ? pelicula.resumen : "Película alojada en canal privado de Telegram."}
             </p>
           </div>
 
