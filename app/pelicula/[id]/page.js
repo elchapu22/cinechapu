@@ -13,7 +13,7 @@ export default async function DetallePelicula({ params }) {
   const resolvedParams = await params;
   const id = resolvedParams.id;
 
-  // Consultamos directo a Turso
+  // 1. Consultamos la película actual
   const resultado = await db.execute({
     sql: `SELECT * FROM peliculas WHERE id = ?`,
     args: [id]
@@ -32,11 +32,31 @@ export default async function DetallePelicula({ params }) {
     );
   }
 
+  // 2. Buscamos la siguiente película (el primer ID mayor al actual)
+  const resultadoSiguiente = await db.execute({
+    sql: `SELECT id FROM peliculas WHERE id > ? ORDER BY id ASC LIMIT 1`,
+    args: [id]
+  });
+
+  const siguientePelicula = resultadoSiguiente.rows[0];
+
   return (
     <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12">
-      <Link href="/" className="inline-block mb-6 text-sm text-zinc-400 hover:text-white transition-colors">
-        ← Volver al catalogo
-      </Link>
+      {/* Barra superior con Volver y Siguiente */}
+      <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center text-sm">
+        <Link href="/" className="text-zinc-400 hover:text-white transition-colors">
+          ← Volver al catalogo
+        </Link>
+
+        {siguientePelicula && (
+          <Link 
+            href={`/pelicula/${siguientePelicula.id}`} 
+            className="text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-4 py-1.5 rounded-lg transition-all shadow"
+          >
+            Siguiente →
+          </Link>
+        )}
+      </div>
 
       <div className="max-w-4xl mx-auto bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden shadow-xl grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
         <div className="aspect-[2/3] bg-zinc-800 rounded overflow-hidden relative">
