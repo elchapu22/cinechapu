@@ -93,7 +93,7 @@ export default async function Home({ searchParams }) {
       <div>
         <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
           <div className="max-w-[1400px] mx-auto flex flex-col items-center text-center">
-            <Link href="/" className="text-2xl md:text-3xl font-black tracking-widest text-red-600 mb-2">NETFLIX PRIVADO</Link>
+            <Link href="/" className="text-2xl md:text-3xl font-black tracking-widest text-red-600 mb-2">CineChapu</Link>
             <p className="text-zinc-400 text-xs md:text-sm mb-6 font-medium">Peliculas, Series & Animes</p>
             
             <form action="/" method="GET" className="w-full max-w-2xl relative mb-6">
@@ -234,7 +234,7 @@ export default async function Home({ searchParams }) {
       </div>
 
       <footer className="w-full border-t border-zinc-800/40 bg-[#070b14] py-6 text-center text-xs text-zinc-500">
-        <p>NETFLIX PRIVADO — Todos los derechos reservados</p>
+        <p>CineChapu — Todos los derechos reservados</p>
       </footer>
     </main>
   );

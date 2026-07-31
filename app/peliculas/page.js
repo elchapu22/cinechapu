@@ -160,7 +160,7 @@ export default async function PeliculasPage({ searchParams }) {
       </div>
 
       <footer className="w-full border-t border-zinc-800/40 bg-[#090d16] py-6 text-center text-xs text-zinc-500">
-        <p>NETFLIX PRIVADO — Todos los derechos reservados</p>
+        <p>CineChapu — Todos los derechos reservados</p>
       </footer>
     </main>
   );
