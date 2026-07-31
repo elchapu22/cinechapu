@@ -71,7 +71,7 @@ export default async function DetallePelicula({ params }) {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold mb-3">{pelicula.nombre}</h1>
             <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-              {pelicula.resumen || "Pelicula alojada en canal privado de Netflix."}
+              {pelicula.resumen || "Pelicula alojada en canal privado de Telegram."}
             </p>
           </div>
 
