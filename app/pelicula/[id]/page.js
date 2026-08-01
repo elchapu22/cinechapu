@@ -22,7 +22,7 @@ export default async function DetallePelicula({ params }) {
 
   if (!pelicula) {
     return (
-      <main className="min-h-screen bg-[#141414] text-white p-6 flex flex-col items-center justify-center">
+      <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-text">
         <h1 className="text-2xl font-bold mb-4">Pelicula no encontrada</h1>
         <Link href="/" className="bg-red-600 px-4 py-2 rounded text-white font-medium hover:bg-red-700">
           Volver al catalogo
@@ -45,7 +45,7 @@ export default async function DetallePelicula({ params }) {
 
   return (
     <SwipeWrapper anteriorId={anteriorPelicula?.id} siguienteId={siguientePelicula?.id}>
-      <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-none">
+      <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-text">
         <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center text-sm">
           <Link href="/" className="text-zinc-400 hover:text-white transition-colors">
             ← Volver al catalogo
