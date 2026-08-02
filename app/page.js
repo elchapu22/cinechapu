@@ -22,6 +22,7 @@ export default async function Home({ searchParams }) {
   const busqueda = params?.busqueda || '';
   const letra = params?.letra || '';
   const genero = params?.genero || '';
+  const anio = params?.anio || '';
   const porPagina = 24;
   const offset = (paginaActual - 1) * porPagina;
 
@@ -75,6 +76,19 @@ export default async function Home({ searchParams }) {
     });
     totalPeliculas = Number(resTotal.rows[0].count);
 
+  } else if (anio) {
+    const resPeli = await db.execute({
+      sql: `SELECT * FROM peliculas WHERE nombre LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
+      args: [`%(${anio})`, porPagina, offset]
+    });
+    peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
+
+    const resTotal = await db.execute({
+      sql: `SELECT COUNT(*) as count FROM peliculas WHERE nombre LIKE ?`,
+      args: [`%(${anio})`]
+    });
+    totalPeliculas = Number(resTotal.rows[0].count);
+
   } else {
     const resPeli = await db.execute({
       sql: `SELECT * FROM peliculas ORDER BY id LIMIT ? OFFSET ?`,
@@ -87,6 +101,17 @@ export default async function Home({ searchParams }) {
   }
 
   const totalPaginas = Math.ceil(totalPeliculas / porPagina) || 1;
+
+  // Extraemos automáticamente todos los años reales del final de los nombres de la base de datos
+  const todosLosNombresRes = await db.execute(`SELECT nombre FROM peliculas`);
+  const todosLosNombres = JSON.parse(JSON.stringify(todosLosNombresRes.rows));
+
+  const anosDisponibles = [...new Set(
+    todosLosNombres.map(p => {
+      const match = p.nombre ? p.nombre.match(/\((\d{4})\)$/) : null;
+      return match ? match[1] : null;
+    }).filter(Boolean)
+  )].sort((a, b) => b - a);
 
   return (
     <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
@@ -140,9 +165,10 @@ export default async function Home({ searchParams }) {
                   {busqueda && <span className="mr-2 text-red-500 font-semibold">Buscando: "{busqueda}"</span>}
                   {letra && <span className="mr-2 text-red-500 font-semibold">Letra: {letra.toUpperCase()}</span>}
                   {genero && <span className="mr-2 text-red-500 font-semibold">Genero: {genero}</span>}
+                  {anio && <span className="mr-2 text-red-500 font-semibold">Año: {anio}</span>}
                   Mostrando <span className="text-white font-bold">{peliculasPaginadas.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span> resultados
                 </div>
-                {(busqueda || letra || genero) && (
+                {(busqueda || letra || genero || anio) && (
                   <Link href="/" className="text-xs text-red-400 hover:underline">
                     Limpiar filtros ✕
                   </Link>
@@ -168,7 +194,7 @@ export default async function Home({ searchParams }) {
               <div className="flex items-center justify-center gap-4 mt-8 py-4">
                 {paginaActual > 1 ? (
                   <Link 
-                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(letra && { letra }), ...(genero && { genero }), page: paginaActual - 1 })}`}
+                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(letra && { letra }), ...(genero && { genero }), ...(anio && { anio }), page: paginaActual - 1 })}`}
                     className="px-4 py-2 bg-[#131b2e] border border-zinc-800 rounded-lg text-xs text-zinc-300 hover:bg-zinc-800 transition-colors"
                   >
                     ← Anterior
@@ -185,7 +211,7 @@ export default async function Home({ searchParams }) {
 
                 {paginaActual < totalPaginas ? (
                   <Link 
-                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(letra && { letra }), ...(genero && { genero }), page: paginaActual + 1 })}`}
+                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(letra && { letra }), ...(genero && { genero }), ...(anio && { anio }), page: paginaActual + 1 })}`}
                     className="px-4 py-2 bg-[#131b2e] border border-zinc-800 rounded-lg text-xs text-zinc-300 hover:bg-zinc-800 transition-colors"
                   >
                     Siguiente →
@@ -209,6 +235,25 @@ export default async function Home({ searchParams }) {
                       className="bg-[#1a2540] hover:bg-red-600 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-zinc-700/50"
                     >
                       {gen}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-[#131b2e]/40 border border-zinc-800/80 rounded-xl p-4 shadow-xl">
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Filtrar por Año</h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {anosDisponibles.map((a) => (
+                    <Link
+                      key={a}
+                      href={`/?anio=${a}`}
+                      className={`px-2.5 py-1 rounded text-xs font-bold transition-colors border ${
+                        anio === a 
+                          ? 'bg-red-600 text-white border-red-500' 
+                          : 'bg-[#1a2540] hover:bg-red-600 text-zinc-300 hover:text-white border-zinc-700/50'
+                      }`}
+                    >
+                      {a}
                     </Link>
                   ))}
                 </div>
