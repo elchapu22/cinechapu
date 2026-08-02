@@ -32,8 +32,8 @@ export default async function Home({ searchParams }) {
   // Consultas optimizadas con Turso y serializadas a objetos planos
   const ultimasSubidasResult = await db.execute(`
     SELECT * FROM peliculas 
-    ORDER BY id DESC 
-    LIMIT 15
+    ORDER BY RANDOM() 
+    LIMIT 50
   `);
   const ultimasSubidas = JSON.parse(JSON.stringify(ultimasSubidasResult.rows));
 
