@@ -9,10 +9,18 @@ const db = createClient({
 
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
 
-export default async function DetallePelicula({ params }) {
+export default async function DetallePelicula({ params, searchParams }) {
   const resolvedParams = await params;
+  const resolvedSearch = await searchParams;
   const id = resolvedParams.id;
 
+  // Extraemos los filtros que vienen de la URL
+  const busqueda = resolvedSearch?.busqueda || '';
+  const letra = resolvedSearch?.letra || '';
+  const genero = resolvedSearch?.genero || '';
+  const anio = resolvedSearch?.anio || '';
+
+  // 1. Buscamos la película actual
   const resultado = await db.execute({
     sql: `SELECT * FROM peliculas WHERE id = ?`,
     args: [id]
@@ -31,39 +39,89 @@ export default async function DetallePelicula({ params }) {
     );
   }
 
-  const resultadoAnterior = await db.execute({
-    sql: `SELECT id FROM peliculas WHERE id < ? ORDER BY id DESC LIMIT 1`,
-    args: [id]
-  });
-  const anteriorPelicula = resultadoAnterior.rows[0];
+  // 2. Construimos la condición SQL dinámica según el filtro activo
+  let sqlWhere = "";
+  let argsBase = [];
 
-  const resultadoSiguiente = await db.execute({
-    sql: `SELECT id FROM peliculas WHERE id > ? ORDER BY id ASC LIMIT 1`,
-    args: [id]
-  });
-  const siguientePelicula = resultadoSiguiente.rows[0];
+  if (busqueda) {
+    sqlWhere = "LOWER(nombre) LIKE ?";
+    argsBase = [`%${busqueda.toLowerCase()}%`];
+  } else if (genero) {
+    sqlWhere = "tags LIKE ?";
+    argsBase = [`%${genero}%`];
+  } else if (letra) {
+    sqlWhere = "LOWER(nombre) LIKE ?";
+    argsBase = [`${letra.toLowerCase()}%`];
+  } else if (anio) {
+    sqlWhere = "nombre LIKE ?";
+    argsBase = [`%(${anio})`];
+  }
+
+  // 3. Consultas inteligentes para Anterior y Siguiente respetando el filtro y el orden estricto de IDs
+  let anteriorPelicula = null;
+  let siguientePelicula = null;
+
+  if (sqlWhere) {
+    // Si hay filtro activo, buscamos dentro de ese subconjunto
+    const resAnt = await db.execute({
+      sql: `SELECT id FROM peliculas WHERE id < ? AND (${sqlWhere}) ORDER BY id DESC LIMIT 1`,
+      args: [id, ...argsBase]
+    });
+    anteriorPelicula = resAnt.rows[0];
+
+    const resSig = await db.execute({
+      sql: `SELECT id FROM peliculas WHERE id > ? AND (${sqlWhere}) ORDER BY id ASC LIMIT 1`,
+      args: [id, ...argsBase]
+    });
+    siguientePelicula = resSig.rows[0];
+  } else {
+    // Si no hay filtro, se mueve por orden global de ID
+    const resAnt = await db.execute({
+      sql: `SELECT id FROM peliculas WHERE id < ? ORDER BY id DESC LIMIT 1`,
+      args: [id]
+    });
+    anteriorPelicula = resAnt.rows[0];
+
+    const resSig = await db.execute({
+      sql: `SELECT id FROM peliculas WHERE id > ? ORDER BY id ASC LIMIT 1`,
+      args: [id]
+    });
+    siguientePelicula = resSig.rows[0];
+  }
+
+  // Preparamos los parámetros de búsqueda para mantenerlos al cambiar de película o volver
+  const queryString = new URLSearchParams({
+    ...(busqueda && { busqueda }),
+    ...(letra && { letra }),
+    ...(genero && { genero }),
+    ...(anio && { anio }),
+  }).toString();
+
+  const urlVolver = queryString ? `/?${queryString}` : '/';
+  const urlAnterior = anteriorPelicula ? `/pelicula/${anteriorPelicula.id}${queryString ? `?${queryString}` : ''}` : null;
+  const urlSiguiente = siguientePelicula ? `/pelicula/${siguientePelicula.id}${queryString ? `?${queryString}` : ''}` : null;
 
   return (
     <SwipeWrapper anteriorId={anteriorPelicula?.id} siguienteId={siguientePelicula?.id}>
       <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-text">
         <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center text-sm">
-          <Link href="/" className="text-zinc-400 hover:text-white transition-colors">
+          <Link href={urlVolver} className="text-zinc-400 hover:text-white transition-colors">
             ← Volver al catalogo
           </Link>
 
           <div className="flex items-center gap-2">
-            {anteriorPelicula && (
+            {urlAnterior && (
               <Link 
-                href={`/pelicula/${anteriorPelicula.id}`} 
+                href={urlAnterior} 
                 className="text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-3.5 py-1.5 rounded-lg transition-all shadow"
               >
                 ← Anterior
               </Link>
             )}
 
-            {siguientePelicula && (
+            {urlSiguiente && (
               <Link 
-                href={`/pelicula/${siguientePelicula.id}`} 
+                href={urlSiguiente} 
                 className="text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-3.5 py-1.5 rounded-lg transition-all shadow"
               >
                 Siguiente →

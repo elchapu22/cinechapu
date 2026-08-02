@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 // Cache global en memoria del navegador para no reconsultar a Turso por la misma pelicula
 const cachePeliculas = {};
@@ -15,13 +16,13 @@ export default function PeliculaCard({ item, imagenGenerica }) {
   const [cargando, setCargando] = useState(false);
   const [cargado, setCargado] = useState(false);
 
-  const handleMouseEnter = async () => {
-    // Si ya esta en cache local o ya se cargo, ni gastamos en hacer fetch
-    if (cargado || cargando) return;
+  // Usamos el hook oficial de Next.js para leer los parámetros de la URL sin errores de hidratación
+  const searchParams = useSearchParams();
 
+  const handleMouseEnter = async () => {
+    if (cargado || cargando) return;
     const nombreLimpio = limpiarNombre(item.nombre);
 
-    // Si ya lo tenemos guardado en la cache del navegador, lo usamos directo sin tocar Turso
     if (cachePeliculas[nombreLimpio]) {
       setInfoPelicula(cachePeliculas[nombreLimpio]);
       setCargado(true);
@@ -32,10 +33,7 @@ export default function PeliculaCard({ item, imagenGenerica }) {
     try {
       const res = await fetch(`/api/peliculas?nombre=${encodeURIComponent(nombreLimpio)}`);
       const data = await res.json();
-      
-      // Guardamos en la cache local del navegador
       cachePeliculas[nombreLimpio] = data;
-      
       setInfoPelicula(data);
       setCargado(true);
     } catch (error) {
@@ -46,14 +44,16 @@ export default function PeliculaCard({ item, imagenGenerica }) {
   };
 
   const textoResumen = infoPelicula?.resumen || infoPelicula?.sinopsis;
-  
-  // Priorizamos la foto que viene de Turso al hacer hover, luego la del item original, y por ultimo la generica
   const fotoActual = infoPelicula?.foto || item.foto || imagenGenerica;
+
+  // Construimos la URL manteniendo los filtros actuales de manera segura
+  const queryString = searchParams.toString();
+  const urlDetalle = queryString ? `/pelicula/${item.id}?${queryString}` : `/pelicula/${item.id}`;
 
   return (
     <div className="relative group" onMouseEnter={handleMouseEnter}>
       <Link 
-        href={`/pelicula/${item.id}`}
+        href={urlDetalle}
         className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col h-full block"
       >
         <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
