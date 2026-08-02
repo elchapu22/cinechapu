@@ -63,7 +63,7 @@ export default async function AnimacionPage({ searchParams }) {
       <div>
         <header className="w-full border-b border-zinc-800/60 bg-[#090d16]/90 backdrop-blur sticky top-0 z-50">
           <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <Link href="/" className="text-xl font-black tracking-widest text-red-600">NETFLIX PRIVADO</Link>
+            <Link href="/" className="text-xl font-black tracking-widest text-red-600">CineChapu</Link>
             <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
               <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
               <Link href="/peliculas" className="hover:text-white transition-colors">Películas</Link>
