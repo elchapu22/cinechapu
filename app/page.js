@@ -91,7 +91,17 @@ export default async function Home({ searchParams }) {
 
   } else {
     const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas ORDER BY id LIMIT ? OFFSET ?`,
+      sql: `
+        SELECT * FROM peliculas 
+        ORDER BY 
+          CASE 
+            WHEN nombre LIKE '%(2026)%' THEN 1 
+            WHEN nombre LIKE '%(2025)%' THEN 2 
+            ELSE 3 
+          END, 
+          RANDOM() 
+        LIMIT ? OFFSET ?
+      `,
       args: [porPagina, offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));

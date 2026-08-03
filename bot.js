@@ -11,7 +11,7 @@ const db = createClient({
   authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODUzOTQxNDUsImlkIjoiMDE5ZmIxYzUtMzYwMS03YmM0LTk4ZGYtNWYzNDg4Y2FhZWRjIiwia2lkIjoiOVBRb1FvLUMtdzh5bWFQeWt5dlI3WnBWUXY1ck10M3I4VVdkUHJuakRMUSIsInJpZCI6IjU4ZmJkMDljLWNlMmUtNGJjZS04YjU1LTdkNDUyOTgzYWIxMyJ9.Q80179N0HQxJCmS1H6gsng_iRYPOEx4hXZC6YTZ5uvBhynpgd9Q9wpx90hPB1hZxVnB_MW6vnareXzdZXfU1Dg"
 });
 
-// Funcion para buscar pelicula en TMDB
+// Funcion para buscar pelicula por texto en TMDB
 async function buscarEnTmdb(query) {
   const url = `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}&language=es-MX&include_adult=false&region=MX`;
   const options = {
@@ -32,7 +32,29 @@ async function buscarEnTmdb(query) {
   }
 }
 
-// Funcion para obtener los creditos y sacar el Director (respetando tu estructura)
+// NUEVA: Funcion para buscar película exacta por su ID numérico de TMDB
+async function buscarPorIdEnTmdb(movieId) {
+  const url = `https://api.themoviedb.org/3/movie/${movieId}?language=es-MX`;
+  const options = {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      Authorization: `Bearer ${TMDB_TOKEN.trim()}`
+    }
+  };
+
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.id ? data : null;
+  } catch (err) {
+    console.error("Error en request TMDB por ID:", err.message);
+    return null;
+  }
+}
+
+// Funcion para obtener los creditos y sacar el Director
 async function obtenerDirector(movieId) {
   const url = `https://api.themoviedb.org/3/movie/${movieId}/credits?language=es-MX`;
   const options = {
@@ -55,7 +77,7 @@ async function obtenerDirector(movieId) {
   }
 }
 
-// NUEVA función limpia para sacar los actores sin romper nada
+// Funcion limpia para sacar los actores
 async function obtenerActores(movieId) {
   const url = `https://api.themoviedb.org/3/movie/${movieId}/credits?language=es-MX`;
   const options = {
@@ -81,28 +103,45 @@ async function obtenerActores(movieId) {
 // Cuando mandes mensajes al bot
 bot.on('text', async (ctx) => {
   const texto = ctx.message.text;
-  const peliculas = texto.split('\n').map(p => p.trim()).filter(Boolean);
+  const entradas = texto.split('\n').map(p => p.trim()).filter(Boolean);
 
-  await ctx.reply(`🔍 Recibí ${peliculas.length} películas. Buscando en TMDB (con director y actores) y actualizando Turso...`);
+  await ctx.reply(`🔍 Recibí ${entradas.length} elementos. Procesando en TMDB y Turso...`);
 
   let count = 0;
 
-  for (const titulo of peliculas) {
+  for (const entrada of entradas) {
     try {
-      let busquedaLimpieza = titulo.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').replace(/\.avi/gi, '');
-      busquedaLimpieza = busquedaLimpieza.replace(/\(\d{4}\)/g, '').trim();
+      let peli = null;
+      let nombreBase = "";
 
-      console.log(`Buscando in TMDB (MX): "${busquedaLimpieza}"`);
+      // SI LA ENTRADA ES UN NÚMERO PURO (Ej: 1433735), BUSCAMOS DIRECTO POR ID
+      if (/^\d+$/.test(entrada)) {
+        console.log(`Buscando por ID exacto en TMDB: ${entrada}`);
+        peli = await buscarPorIdEnTmdb(entrada);
+        if (peli) {
+          nombreBase = peli.title; // Usamos el título oficial limpio de TMDB para buscar en Turso
+        }
+      } else {
+        // SINO, MANTENEMOS EL BUSCADOR POR NOMBRE DE ANTES
+        let busquedaLimpieza = entrada.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').replace(/\.avi/gi, '');
+        busquedaLimpieza = busquedaLimpieza.replace(/\(\d{4}\)/g, '').trim();
 
-      let results = await buscarEnTmdb(busquedaLimpieza);
+        console.log(`Buscando por texto en TMDB (MX): "${busquedaLimpieza}"`);
 
-      if (results.length === 0 && busquedaLimpieza.includes(':')) {
-        const principal = busquedaLimpieza.split(':')[0].trim();
-        results = await buscarEnTmdb(principal);
+        let results = await buscarEnTmdb(busquedaLimpieza);
+
+        if (results.length === 0 && busquedaLimpieza.includes(':')) {
+          const principal = busquedaLimpieza.split(':')[0].trim();
+          results = await buscarEnTmdb(principal);
+        }
+
+        if (results.length > 0) {
+          peli = results[0];
+          nombreBase = entrada.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').trim();
+        }
       }
 
-      if (results.length > 0) {
-        const peli = results[0];
+      if (peli) {
         console.log(`> ¡Encontrado!: "${peli.title}" (ID: ${peli.id})`);
         
         const resumen = peli.overview || '';
@@ -110,13 +149,10 @@ bot.on('text', async (ctx) => {
         const anio = peli.release_date ? peli.release_date.split('-')[0] : '';
         const calificacion = peli.vote_average ? peli.vote_average.toFixed(1) : '';
         
-        // Obtenemos director y actores con tus funciones
         const director = await obtenerDirector(peli.id);
         const actores = await obtenerActores(peli.id);
 
-        const nombreBase = titulo.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').trim();
-
-        // Actualizamos todos los campos en Turso incluyendo actores
+        // Actualizamos en Turso
         const resultado = await db.execute({
           sql: `UPDATE peliculas SET resumen = ?, foto = ?, director = ?, actores = ?, anio = ?, calificacion = ? WHERE LOWER(nombre) LIKE LOWER(?)`,
           args: [resumen, foto, director, actores, anio, calificacion, `%${nombreBase}%`]
@@ -128,15 +164,15 @@ bot.on('text', async (ctx) => {
           count++;
         }
       } else {
-        console.log(`❌ No se encontró nada en TMDB para: ${busquedaLimpieza}`);
+        console.log(`❌ No se encontró nada en TMDB para: ${entrada}`);
       }
     } catch (err) {
-      console.error(`Error procesando la película "${titulo}":`, err.message);
+      console.error(`Error procesando la entrada "${entrada}":`, err.message);
     }
   }
 
-  await ctx.reply(`✅ ¡Listo! Se actualizaron ${count} películas con director, actores y detalles en Turso.`);
+  await ctx.reply(`✅ ¡Listo! Se actualizaron ${count} películas correctamente en Turso.`);
 });
 
 bot.launch();
-console.log("🤖 Bot de Telegram corriendo con soporte de Director y Actores...");
+console.log("🤖 Bot de Telegram corriendo con soporte dual (Texto e ID exacto)...");
