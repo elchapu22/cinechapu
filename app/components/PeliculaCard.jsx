@@ -60,7 +60,7 @@ export default function PeliculaCard({ item, imagenGenerica }) {
           <img src={fotoActual} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
         </div>
         <div className="p-2.5 flex-1 flex flex-col justify-between">
-          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(item.nombre)}</h3>
+          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug capitalize">{limpiarNombre(item.nombre)}</h3>
         </div>
       </Link>
 

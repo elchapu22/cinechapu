@@ -90,7 +90,7 @@ export default function CarruselEstrenos({ ultimasSubidas, imagenGenerica }) {
             </div>
           </div>
           <div className="p-2.5 pointer-events-none">
-            <h3 className="text-[11px] font-semibold text-zinc-200 line-clamp-1 leading-snug">{limpiarNombre(item.nombre)}</h3>
+            <h3 className="text-[11px] font-semibold text-zinc-200 line-clamp-1 leading-snug capitalize">{limpiarNombre(item.nombre)}</h3>
           </div>
         </Link>
       ))}

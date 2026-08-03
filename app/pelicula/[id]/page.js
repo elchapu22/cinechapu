@@ -141,7 +141,7 @@ export default async function DetallePelicula({ params, searchParams }) {
 
           <div className="md:col-span-2 flex flex-col justify-between">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2">{pelicula.nombre}</h1>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 capitalize">{pelicula.nombre}</h1>
               
               <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400 mb-3">
                 {pelicula.anio && pelicula.anio !== "NULL" && (
