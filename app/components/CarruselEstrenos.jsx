@@ -1,5 +1,5 @@
 'use client';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 
 const limpiarNombre = (nombre) => {
@@ -12,6 +12,29 @@ export default function CarruselEstrenos({ ultimasSubidas, imagenGenerica }) {
   let isDown = false;
   let startX;
   let scrollLeft;
+
+  // --- EFECTO DE AUTOPLAY (MOVIMIENTO AUTOMÁTICO) ---
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const interval = setInterval(() => {
+      // Si el usuario está interactuando o arrastrando, no hacemos auto-scroll para molestarlo
+      if (isDown) return;
+
+      // Calculamos cuánto se desplaza (ej: ancho de una tarjeta aprox o un valor fijo)
+      const scrollAmount = 200; 
+      
+      // Si llega al final, vuelve al principio suavemente
+      if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
+    }, 3500); // Se mueve solo cada 3.5 segundos (podes ajustarlo)
+
+    return () => clearInterval(interval);
+  }, [isDown]);
 
   const handleMouseDown = (e) => {
     isDown = true;
@@ -34,7 +57,7 @@ export default function CarruselEstrenos({ ultimasSubidas, imagenGenerica }) {
     if (!isDown) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startX) * 1.5; // Factor de velocidad ajustado para mayor control
+    const walk = (x - startX) * 1.5;
     scrollRef.current.scrollLeft = scrollLeft - walk;
   };
 
