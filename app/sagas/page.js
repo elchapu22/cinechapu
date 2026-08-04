@@ -1,5 +1,8 @@
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 
 const sql = createClient({
   url: process.env.TURSO_DATABASE_URL,
