@@ -13,8 +13,8 @@ export default async function DetalleSagaPage({ params }) {
   const nombreSaga = decodeURIComponent(resolvedParams.slug);
 
   const resultado = await sql.execute({
-    sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?))`,
-    args: [nombreSaga]
+    sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) LIKE LOWER(TRIM(?))`,
+    args: [`%${nombreSaga}%`]
   });
 
   let peliculas = resultado.rows;
