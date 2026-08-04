@@ -76,7 +76,7 @@ export default async function PeliculasPage({ searchParams }) {
             <Link href="/" className="text-xl font-black tracking-widest text-red-600">CineChapu</Link>
             <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
               <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-              <Link href="/peliculas" className="text-white hover:text-red-500 transition-colors">Películas</Link>
+              <Link href="/peliculas" className="text-white hover:text-red-500 transition-colors">Peliculas</Link>
               <Link href="/series" className="hover:text-white transition-colors">Series</Link>
               <Link href="/animacion" className="hover:text-white transition-colors">Animacion</Link>
             </nav>
@@ -85,7 +85,7 @@ export default async function PeliculasPage({ searchParams }) {
                 type="text" 
                 name="busqueda" 
                 defaultValue={busqueda}
-                placeholder="Buscar película..." 
+                placeholder="Buscar pelicula..." 
                 className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
               />
             </form>
@@ -97,7 +97,7 @@ export default async function PeliculasPage({ searchParams }) {
             <div className="flex-1 w-full">
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
                 <div className="text-zinc-400">
-                  <span className="text-red-500 font-semibold mr-2">Catálogo de Películas</span>
+                  <span className="text-red-500 font-semibold mr-2">Catalogo de Peliculas</span>
                   Mostrando <span className="text-white font-bold">{peliculasPaginadas.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span>
                 </div>
                 {(busqueda || letra) && (
@@ -124,7 +124,7 @@ export default async function PeliculasPage({ searchParams }) {
                 </div>
               ) : (
                 <div className="text-center py-20 text-zinc-500 bg-[#131b2e]/30 rounded-lg border border-zinc-800/40">
-                  No se encontraron películas.
+                  No se encontraron peliculas.
                 </div>
               )}
 
@@ -134,7 +134,7 @@ export default async function PeliculasPage({ searchParams }) {
                 ) : (
                   <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">← Anterior</span>
                 )}
-                <span className="text-xs text-zinc-400">Página <strong className="text-white">{paginaActual}</strong> de {totalPaginas}</span>
+                <span className="text-xs text-zinc-400">Pagina <strong className="text-white">{paginaActual}</strong> de {totalPaginas}</span>
                 {paginaActual < totalPaginas ? (
                   <Link href={`/peliculas?page=${paginaActual + 1}${busqueda ? `&busqueda=${busqueda}` : ''}${letra ? `&letra=${letra}` : ''}`} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-xs font-medium">Siguiente →</Link>
                 ) : (

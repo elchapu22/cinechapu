@@ -144,12 +144,13 @@ export default async function Home({ searchParams }) {
               </button>
             </form>
 
-            <nav className="flex items-center gap-8 text-sm text-zinc-300 font-medium">
-              <Link href="/" className="hover:text-red-500 transition-colors flex items-center gap-1.5">🏠 Inicio</Link>
-              <Link href="/peliculas" className="hover:text-red-500 transition-colors flex items-center gap-1.5">🎬 Peliculas</Link>
-              <Link href="/series" className="hover:text-red-500 transition-colors flex items-center gap-1.5">📺 Series</Link>
-              <Link href="/animacion" className="hover:text-red-500 transition-colors flex items-center gap-1.5">🚀 Animacion</Link>
-            </nav>
+            <nav className="flex items-center justify-center gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
+  <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
+  <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
+  <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
+  <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
+  <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
+</nav>
           </div>
         </header>
 

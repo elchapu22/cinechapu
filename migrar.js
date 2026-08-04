@@ -2,61 +2,61 @@ import { createClient } from "@libsql/client";
 import fs from 'fs';
 import { parse } from 'csv-parse/sync';
 
-const db = createClient({
+const dbRemoto = createClient({
   url: "libsql://catalogo-peliculas-chapu.aws-us-east-1.turso.io",
-  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODUzOTQxNDUsImlkIjoiMDE5ZmIxYzUtMzYwMS03YmM0LTk4ZGYtNWYzNDg4Y2FhZWRjIiwia2lkIjoiOVBRb1FvLUMtdzh5bWFQeWt5dlI3WnBWUXY1ck10M3I4VVdkUHJuakRMUSIsInJpZCI6IjU4ZmJkMDljLWNlMmUtNGJjZS04YjU1LTdkNDUyOTgzYWIxMyJ9.Q80179N0HQxJCmS1H6gsng_iRYPOEx4hXZC6YTZ5uvBhynpgd9Q9wpx90hPB1hZxVnB_MW6vnareXzdZXfU1Dg" // Reemplaza con tu token real
+  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODUzOTQxNDUsImlkIjoiMDE5ZmIxYzUtMzYwMS03YmM0LTk4ZGYtNWYzNDg4Y2FhZWRjIiwia2lkIjoiOVBRb1FvLUMtdzh5bWFQeWt5dlI3WnBWUXY1ck10M3I4VVdkUHJuakRMUSIsInJpZCI6IjU4ZmJkMDljLWNlMmUtNGJjZS04YjU1LTdkNDUyOTgzYWIxMyJ9.Q80179N0HQxJCmS1H6gsng_iRYPOEx4hXZC6YTZ5uvBhynpgd9Q9wpx90hPB1hZxVnB_MW6vnareXzdZXfU1Dg"
 });
 
-async function migrarCSV() {
+async function sincronizarNuevasPorNombre() {
   try {
-    console.log("Leyendo y parseando el archivo CSV...");
-    const contenido = fs.readFileSync('./peliculas_202607300338.csv', 'utf-8');
-    
-    // Parseamos usando csv-parse para manejar correctamente comas internas y comillas
-    const registros = parse(contenido, {
+    console.log("Leyendo el archivo peliculas_neon_nuevas.csv...");
+    const archivoCsv = fs.readFileSync('peliculas_neon_nuevas.csv', 'utf-8');
+    const registros = parse(archivoCsv, {
       columns: true,
-      skip_empty_lines: true,
-      relax_column_count: true
+      skip_empty_lines: true
     });
 
-    if (registros.length === 0) {
-      console.log("El archivo CSV esta vacio.");
-      return;
-    }
+    console.log(`Se encontraron ${registros.length} películas en el CSV de Neon.`);
 
-    const headers = Object.keys(registros[0]);
-    console.log(`Columnas detectadas: ${headers.join(', ')}`);
+    // Traemos los nombres que ya existen en Turso (normalizados en minúsculas y sin espacios extra)
+    const resultadoExistentes = await dbRemoto.execute("SELECT nombre FROM peliculas");
+    const nombresEnTurso = new Set(resultadoExistentes.rows.map(r => String(r.nombre).trim().toLowerCase()));
 
-    // Creamos la tabla dinamicamente
-    const columnasDef = headers.map(col => `"${col}" TEXT`).join(', ');
-    await db.execute(`DROP TABLE IF EXISTS peliculas;`);
-    await db.execute(`CREATE TABLE peliculas (${columnasDef});`);
-    console.log("Tabla 'peliculas' recreada con exito.");
+    console.log(`Turso tiene actualmente ${nombresEnTurso.size} películas únicas.`);
 
-    console.log(`Insertando ${registros.length} filas en Turso...`);
+    let insertadas = 0;
 
-    for (let i = 0; i < registros.length; i++) {
-      const fila = registros[i];
-      const keys = Object.keys(fila);
-      const values = keys.map(k => fila[k]);
+    for (const p of registros) {
+      const nombreLimpio = String(p.nombre || '').trim().toLowerCase();
       
-      const placeholders = keys.map(() => '?').join(', ');
-      const sql = `INSERT INTO peliculas (${keys.map(h => `"${h}"`).join(', ')}) VALUES (${placeholders})`;
-
-      try {
-        await db.execute({
-          sql: sql,
-          args: values
+      // Si el nombre NO está en Turso, lo agregamos
+      if (nombreLimpio && !nombresEnTurso.has(nombreLimpio)) {
+        await dbRemoto.execute({
+          sql: `INSERT INTO peliculas (id, nombre, link, tags, id_saga, foto, resumen, calificacion, director, anio, actores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          args: [
+            Number(p.id), 
+            p.nombre || '', 
+            p.link || '', 
+            p.tags || '', 
+            p.id_saga || '', 
+            p.foto || '', 
+            p.resumen || '', 
+            p.calificacion || '', 
+            p.director || '', 
+            p.anio || '', 
+            p.actores || ''
+          ]
         });
-      } catch (err) {
-        console.warn(`Error en registro ${i + 1}:`, err.message);
+        nombresEnTurso.add(nombreLimpio); // Lo agregamos al Set para evitar duplicados dentro del mismo CSV
+        insertadas++;
+        console.log(`-> Agregada nueva: [ID ${p.id}] ${p.nombre}`);
       }
     }
 
-    console.log("¡Migracion completa y exitosa!");
+    console.log(`\n¡Sincronización completada con éxito! Se agregaron ${insertadas} películas nuevas.`);
   } catch (error) {
-    console.error("Error general en la migracion:", error);
+    console.error("Error durante la sincronización:", error);
   }
 }
 
-migrarCSV();
+sincronizarNuevasPorNombre();
