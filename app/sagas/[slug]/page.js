@@ -13,11 +13,23 @@ export default async function DetalleSagaPage({ params }) {
   const nombreSaga = decodeURIComponent(resolvedParams.slug);
 
   const resultado = await sql.execute({
-    sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?)) ORDER BY id`,
+    sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?))`,
     args: [nombreSaga]
   });
 
-  const peliculas = resultado.rows;
+  let peliculas = resultado.rows;
+
+  // ORDENAMIENTO CRONOLOGICO PERFECTO EN JS:
+  // Extrae el año que esta entre parentesis al final del nombre (ej: "(1962)") y las ordena de menor a mayor.
+  peliculas.sort((a, b) => {
+    const matchA = a.nombre ? a.nombre.match(/\((\d{4})\)\s*$/) : null;
+    const matchB = b.nombre ? b.nombre.match(/\((\d{4})\)\s*$/) : null;
+    
+    const anioA = matchA ? parseInt(matchA[1], 10) : 0;
+    const anioB = matchB ? parseInt(matchB[1], 10) : 0;
+    
+    return anioA - anioB;
+  });
 
   return (
     <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
@@ -46,7 +58,6 @@ export default async function DetalleSagaPage({ params }) {
           <p className="text-xs text-zinc-400 mb-8">Mostrando <span className="text-white font-bold">{peliculas.length}</span> peliculas de la coleccion.</p>
 
           {peliculas.length > 0 ? (
-            // Actualizado exactamente a 6 columnas (lg:grid-cols-6) para que coincida con la home
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
               {peliculas.map((pelicula) => (
                 <Link 
