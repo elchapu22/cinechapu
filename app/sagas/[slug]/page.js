@@ -62,7 +62,7 @@ export default async function DetalleSagaPage({ params }) {
               {peliculas.map((pelicula) => (
                 <Link 
                   key={pelicula.id} 
-                  href={`/pelicula/${pelicula.id}`}
+                  href={`/pelicula/${pelicula.id}?saga=${encodeURIComponent(nombreSaga)}`}
                   className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
                 >
                   <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">

@@ -14,13 +14,14 @@ export default async function DetallePelicula({ params, searchParams }) {
   const resolvedSearch = await searchParams;
   const id = resolvedParams.id;
 
-  // Extraemos los filtros que vienen de la URL
+  // Extraemos los filtros que vienen de la URL (incluyendo saga)
   const busqueda = resolvedSearch?.busqueda || '';
   const letra = resolvedSearch?.letra || '';
   const genero = resolvedSearch?.genero || '';
   const anio = resolvedSearch?.anio || '';
+  const sagaFiltro = resolvedSearch?.saga || '';
 
-  // 1. Buscamos la película actual
+  // 1. Buscamos la pelicula actual
   const resultado = await db.execute({
     sql: `SELECT * FROM peliculas WHERE id = ?`,
     args: [id]
@@ -39,74 +40,106 @@ export default async function DetallePelicula({ params, searchParams }) {
     );
   }
 
-  // 2. Construimos la condición SQL dinámica según el filtro activo
-  let sqlWhere = "";
-  let argsBase = [];
+  // Definimos si estamos navegando dentro de una saga (usando el parametro o el campo de la pelicula)
+  const sagaActual = sagaFiltro || pelicula.id_saga;
 
-  if (busqueda) {
-    sqlWhere = "LOWER(nombre) LIKE ?";
-    argsBase = [`%${busqueda.toLowerCase()}%`];
-  } else if (genero) {
-    sqlWhere = "tags LIKE ?";
-    argsBase = [`%${genero}%`];
-  } else if (letra) {
-    sqlWhere = "LOWER(nombre) LIKE ?";
-    argsBase = [`${letra.toLowerCase()}%`];
-  } else if (anio) {
-    sqlWhere = "nombre LIKE ?";
-    argsBase = [`%(${anio})`];
-  }
-
-  // 3. Consultas inteligentes para Anterior y Siguiente respetando el filtro y el orden estricto de IDs
   let anteriorPelicula = null;
   let siguientePelicula = null;
 
-  if (sqlWhere) {
-    // Si hay filtro activo, buscamos dentro de ese subconjunto
-    const resAnt = await db.execute({
-      sql: `SELECT id FROM peliculas WHERE id < ? AND (${sqlWhere}) ORDER BY id DESC LIMIT 1`,
-      args: [id, ...argsBase]
+  // 2. Si estamos dentro de una saga, navegamos respetando el orden cronologico por año
+  if (sagaActual && sagaActual.trim() !== "") {
+    const resSaga = await db.execute({
+      sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?))`,
+      args: [sagaActual.trim()]
     });
-    anteriorPelicula = resAnt.rows[0];
 
-    const resSig = await db.execute({
-      sql: `SELECT id FROM peliculas WHERE id > ? AND (${sqlWhere}) ORDER BY id ASC LIMIT 1`,
-      args: [id, ...argsBase]
+    let peliculasSaga = resSaga.rows;
+
+    // Ordenamos igual que en la vista de la saga por el año entre parentesis
+    peliculasSaga.sort((a, b) => {
+      const matchA = a.nombre ? a.nombre.match(/\((\d{4})\)\s*$/) : null;
+      const matchB = b.nombre ? b.nombre.match(/\((\d{4})\)\s*$/) : null;
+      const anioA = matchA ? parseInt(matchA[1], 10) : 0;
+      const anioB = matchB ? parseInt(matchB[1], 10) : 0;
+      return anioA - anioB;
     });
-    siguientePelicula = resSig.rows[0];
+
+    // Buscamos el indice de la pelicula actual dentro de la saga ordenada
+    const indexActual = peliculasSaga.findIndex(p => String(p.id) === String(id));
+
+    if (indexActual !== -1) {
+      if (indexActual > 0) {
+        anteriorPelicula = peliculasSaga[indexActual - 1];
+      }
+      if (indexActual < peliculasSaga.length - 1) {
+        siguientePelicula = peliculasSaga[indexActual + 1];
+      }
+    }
   } else {
-    // Si no hay filtro, se mueve por orden global de ID
-    const resAnt = await db.execute({
-      sql: `SELECT id FROM peliculas WHERE id < ? ORDER BY id DESC LIMIT 1`,
-      args: [id]
-    });
-    anteriorPelicula = resAnt.rows[0];
+    // 3. Logica normal si no es una saga (filtros habituales o catalogo general)
+    let sqlWhere = "";
+    let argsBase = [];
 
-    const resSig = await db.execute({
-      sql: `SELECT id FROM peliculas WHERE id > ? ORDER BY id ASC LIMIT 1`,
-      args: [id]
-    });
-    siguientePelicula = resSig.rows[0];
+    if (busqueda) {
+      sqlWhere = "LOWER(nombre) LIKE ?";
+      argsBase = [`%${busqueda.toLowerCase()}%`];
+    } else if (genero) {
+      sqlWhere = "tags LIKE ?";
+      argsBase = [`%${genero}%`];
+    } else if (letra) {
+      sqlWhere = "LOWER(nombre) LIKE ?";
+      argsBase = [`${letra.toLowerCase()}%`];
+    } else if (anio) {
+      sqlWhere = "nombre LIKE ?";
+      argsBase = [`%(${anio})`];
+    }
+
+    if (sqlWhere) {
+      const resAnt = await db.execute({
+        sql: `SELECT id FROM peliculas WHERE id < ? AND (${sqlWhere}) ORDER BY id DESC LIMIT 1`,
+        args: [id, ...argsBase]
+      });
+      anteriorPelicula = resAnt.rows[0];
+
+      const resSig = await db.execute({
+        sql: `SELECT id FROM peliculas WHERE id > ? AND (${sqlWhere}) ORDER BY id ASC LIMIT 1`,
+        args: [id, ...argsBase]
+      });
+      siguientePelicula = resSig.rows[0];
+    } else {
+      const resAnt = await db.execute({
+        sql: `SELECT id FROM peliculas WHERE id < ? ORDER BY id DESC LIMIT 1`,
+        args: [id]
+      });
+      anteriorPelicula = resAnt.rows[0];
+
+      const resSig = await db.execute({
+        sql: `SELECT id FROM peliculas WHERE id > ? ORDER BY id ASC LIMIT 1`,
+        args: [id]
+      });
+      siguientePelicula = resSig.rows[0];
+    }
   }
 
-  // Preparamos los parámetros de búsqueda para mantenerlos al cambiar de película o volver
+  // Preparamos los parametros de URL para mantener el filtro de saga o de catalogo
   const queryString = new URLSearchParams({
     ...(busqueda && { busqueda }),
     ...(letra && { letra }),
     ...(genero && { genero }),
     ...(anio && { anio }),
+    ...(sagaActual && { saga: sagaActual }),
   }).toString();
 
-  const urlVolver = queryString ? `/?${queryString}` : '/';
-  const urlAnterior = anteriorPelicula ? `/pelicula/${anteriorPelicula.id}${queryString ? `?${queryString}` : ''}` : null;
-  const urlSiguiente = siguientePelicula ? `/pelicula/${siguientePelicula.id}${queryString ? `?${queryString}` : ''}` : null;
+  const urlVolver = sagaActual ? `/sagas/${encodeURIComponent(sagaActual)}` : (queryString ? `/?${queryString}` : '/');
+  const urlAnterior = anteriorPelicula ? `/pelicula/${anteriorPelicula.id}?${queryString}` : null;
+  const urlSiguiente = siguientePelicula ? `/pelicula/${siguientePelicula.id}?${queryString}` : null;
 
   return (
     <SwipeWrapper anteriorId={anteriorPelicula?.id} siguienteId={siguientePelicula?.id}>
       <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-text">
         <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center text-sm">
           <Link href={urlVolver} className="text-zinc-400 hover:text-white transition-colors">
-            ← Volver al catalogo
+            {sagaActual ? `← Volver a la saga` : `← Volver al catalogo`}
           </Link>
 
           <div className="flex items-center gap-2">
@@ -168,7 +201,7 @@ export default async function DetallePelicula({ params, searchParams }) {
               )}
 
               <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-                {pelicula.resumen && pelicula.resumen !== "NULL" ? pelicula.resumen : "Película alojada en canal privado de Telegram."}
+                {pelicula.resumen && pelicula.resumen !== "NULL" ? pelicula.resumen : "Pelicula alojada en canal privado de Telegram."}
               </p>
             </div>
 
