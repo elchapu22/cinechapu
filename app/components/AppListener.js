@@ -4,7 +4,7 @@ import { App } from '@capacitor/app';
 
 export default function AppListener() {
   useEffect(() => {
-    // 1. Interceptar los clics en enlaces de Telegram para abrirlos directo en la app nativa
+    // 1. Interceptar los clics en enlaces de Telegram
     const handleAnchorClick = (event) => {
       let target = event.target.closest('a');
       if (target && target.href && target.href.includes('t.me/')) {
@@ -15,34 +15,33 @@ export default function AppListener() {
 
     document.addEventListener('click', handleAnchorClick);
 
-    // 2. Controlar el botón "Atrás" de Android con Capacitor
-    let backButtonListener;
-    async function setupBackButton() {
-      try {
-        backButtonListener = await App.addListener('backButton', () => {
-          if (window.location.pathname === '/' || window.location.pathname === '') {
-            const salir = window.confirm("¿Querés salir de CineChapu?");
-            if (salir) {
-              App.exitApp();
-            }
-          } else {
-            window.history.back();
-          }
-        });
-      } catch (e) {
-        console.log("Capacitor App plugin no disponible en navegador web");
-      }
-    }
+    // 2. Truco de historial para frenar el botón "Atrás"
+    // Agregamos un estado fantasma al historial al cargar la página
+    window.history.pushState(null, '', window.location.href);
 
-    setupBackButton();
+    const handlePopState = (event) => {
+      // Cuando el usuario toca "atrás", el navegador vuelve al estado fantasma
+      const salir = window.confirm("¿Querés salir de CineChapu?");
+      if (salir) {
+        // Si acepta salir, cerramos la app (si está en Capacitor) o dejamos que salga
+        try {
+          App.exitApp();
+        } catch (e) {
+          window.close();
+        }
+      } else {
+        // Si cancela, volvemos a empujar el estado para que no se salga
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
       document.removeEventListener('click', handleAnchorClick);
-      if (backButtonListener) {
-        backButtonListener.remove();
-      }
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
-  return null; // Este componente no muestra nada visual en pantalla
+  return null;
 }
