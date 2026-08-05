@@ -15,33 +15,34 @@ export default function AppListener() {
 
     document.addEventListener('click', handleAnchorClick);
 
-    // 2. Truco de trampolín en el historial para atrapar el botón Atrás
-    // Empujamos un estado inicial para tener control de cuándo el usuario retrocede
-    window.history.pushState({ page: 'root' }, '', window.location.href);
+    // 2. Escucha nativa robusta para Capacitor
+    let backButtonSubscription;
 
-    const handlePopState = (event) => {
-      // Verificamos si estamos en la ruta principal o si podemos volver atrás
-      // Si el usuario está navegando dentro de la app, dejamos que el router actúe, 
-      // pero si intenta salir de la app, frenamos y preguntamos.
-      const salir = window.confirm("¿Querés salir de CineChapu?");
-      
-      if (salir) {
-        try {
-          App.exitApp();
-        } catch (e) {
-          window.close();
-        }
-      } else {
-        // Si cancela, volvemos a asegurar el estado en el historial para que no cierre
-        window.history.pushState({ page: 'root' }, '', window.location.href);
+    async function initNativeBack() {
+      try {
+        // Nos suscribimos al evento nativo del botón atrás de Android
+        backButtonSubscription = await App.addListener('backButton', ({ canGoBack }) => {
+          if (!canGoBack || window.location.pathname === '/') {
+            const salir = window.confirm("¿Querés salir de CineChapu?");
+            if (salir) {
+              App.exitApp();
+            }
+          } else {
+            window.history.back();
+          }
+        });
+      } catch (e) {
+        console.log("No estamos en un entorno nativo de Capacitor:", e);
       }
-    };
+    }
 
-    window.addEventListener('popstate', handlePopState);
+    initNativeBack();
 
     return () => {
       document.removeEventListener('click', handleAnchorClick);
-      window.removeEventListener('popstate', handlePopState);
+      if (backButtonSubscription) {
+        backButtonSubscription.remove();
+      }
     };
   }, []);
 
