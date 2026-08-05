@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CineChapu</string>
+    <string name="title_activity_main">CineChapu</string>
+    <string name="package_name">com.cinechapu.app</string>
+    <string name="custom_url_scheme">com.cinechapu.app</string>
+</resources>
