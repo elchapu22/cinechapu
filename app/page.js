@@ -2,6 +2,7 @@ import { createClient } from '@libsql/client';
 import Link from 'next/link';
 import PeliculaCard from './components/PeliculaCard';
 import CarruselEstrenos from './components/CarruselEstrenos';
+import AppListener from './components/AppListener'; // <--- 1. Importamos el componente nativo
 
 // Configuracion de Turso
 const db = createClient({
@@ -112,7 +113,6 @@ export default async function Home({ searchParams }) {
 
   const totalPaginas = Math.ceil(totalPeliculas / porPagina) || 1;
 
-  // Extraemos automáticamente todos los años reales del final de los nombres de la base de datos
   const todosLosNombresRes = await db.execute(`SELECT nombre FROM peliculas`);
   const todosLosNombres = JSON.parse(JSON.stringify(todosLosNombresRes.rows));
 
@@ -125,6 +125,9 @@ export default async function Home({ searchParams }) {
 
   return (
     <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
+      {/* 2. Activamos el componente de Capacitor acá */}
+      <AppListener />
+
       <div>
         <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
           <div className="max-w-[1400px] mx-auto flex flex-col items-center text-center">
@@ -145,12 +148,12 @@ export default async function Home({ searchParams }) {
             </form>
 
             <nav className="flex items-center justify-center gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
-  <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
-  <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
-  <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
-  <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
-  <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
-</nav>
+              <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
+              <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
+              <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
+              <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
+              <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
+            </nav>
           </div>
         </header>
 
