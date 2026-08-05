@@ -61,6 +61,9 @@ export default async function Home({ searchParams }) {
     } else if (genero === "Pedro Infante") {
       tagBusqueda = "pedro-infante";
     }
+    else if (genero === "Elvis Presley") {
+      tagBusqueda = "elvis";
+    }
 
     const resPeli = await db.execute({
       sql: `SELECT * FROM peliculas WHERE tags LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
@@ -252,7 +255,7 @@ export default async function Home({ searchParams }) {
               <div className="bg-[#131b2e]/40 border border-zinc-800/80 rounded-xl p-4 shadow-xl">
                 <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Colecciones Populares</h3>
                 <div className="flex flex-wrap gap-2">
-                  {["Cantinflas", "Pedro Infante", "Charlie Chaplin"].map((coleccion) => (
+                  {["Cantinflas", "Pedro Infante", "Charlie Chaplin", "Elvis Presley"].map((coleccion) => (
                     <Link
                       key={coleccion}
                       href={`/?genero=${coleccion}`}

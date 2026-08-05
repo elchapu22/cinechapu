@@ -84,6 +84,8 @@ export default async function DetallePelicula({ params, searchParams }) {
       tagBusqueda = "cantinflas";
     } else if (genero === "Pedro Infante") {
       tagBusqueda = "pedro-infante";
+    } else if (genero === "Elvis Presley") {
+      tagBusqueda = "elvis";
     } else {
       tagBusqueda = genero;
     }
