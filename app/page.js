@@ -52,15 +52,25 @@ export default async function Home({ searchParams }) {
     totalPeliculas = Number(resTotal.rows[0].count);
 
   } else if (genero) {
+    // Mapeo exacto del tag que guardaste en la base de datos para cada colección
+    let tagBusqueda = "";
+    if (genero === "Charlie Chaplin") {
+      tagBusqueda = "chaplin"; // Asegurate de poner este tag en las pelis de Chaplin en tu BD
+    } else if (genero === "Cantinflas") {
+      tagBusqueda = "cantinflas";
+    } else if (genero === "Pedro Infante") {
+      tagBusqueda = "pedro-infante";
+    }
+
     const resPeli = await db.execute({
       sql: `SELECT * FROM peliculas WHERE tags LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
-      args: [`%${genero}%`, porPagina, offset]
+      args: [`%${tagBusqueda}%`, porPagina, offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
 
     const resTotal = await db.execute({
       sql: `SELECT COUNT(*) as count FROM peliculas WHERE tags LIKE ?`,
-      args: [`%${genero}%`]
+      args: [`%${tagBusqueda}%`]
     });
     totalPeliculas = Number(resTotal.rows[0].count);
 
@@ -178,7 +188,7 @@ export default async function Home({ searchParams }) {
                 <div className="text-zinc-400">
                   {busqueda && <span className="mr-2 text-red-500 font-semibold">Buscando: "{busqueda}"</span>}
                   {letra && <span className="mr-2 text-red-500 font-semibold">Letra: {letra.toUpperCase()}</span>}
-                  {genero && <span className="mr-2 text-red-500 font-semibold">Genero: {genero}</span>}
+                  {genero && <span className="mr-2 text-red-500 font-semibold">Colección: {genero}</span>}
                   {anio && <span className="mr-2 text-red-500 font-semibold">Año: {anio}</span>}
                   Mostrando <span className="text-white font-bold">{peliculasPaginadas.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span> resultados
                 </div>
@@ -240,15 +250,15 @@ export default async function Home({ searchParams }) {
 
             <div className="lg:col-span-1 space-y-6">
               <div className="bg-[#131b2e]/40 border border-zinc-800/80 rounded-xl p-4 shadow-xl">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Generos Populares</h3>
+                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Colecciones Populares</h3>
                 <div className="flex flex-wrap gap-2">
-                  {["Accion", "Comedia", "Drama", "Terror", "Aventura", "Ciencia Ficcion", "Suspenso", "Animacion"].map((gen) => (
+                  {["Cantinflas", "Pedro Infante", "Charlie Chaplin"].map((coleccion) => (
                     <Link
-                      key={gen}
-                      href={`/?genero=${gen}`}
+                      key={coleccion}
+                      href={`/?genero=${coleccion}`}
                       className="bg-[#1a2540] hover:bg-red-600 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-zinc-700/50"
                     >
-                      {gen}
+                      {coleccion}
                     </Link>
                   ))}
                 </div>
