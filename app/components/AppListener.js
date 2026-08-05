@@ -1,12 +1,8 @@
 'use client';
 import { useEffect } from 'react';
 import { App } from '@capacitor/app';
-import { useRouter, usePathname } from 'next/navigation';
 
 export default function AppListener() {
-  const router = useRouter();
-  const pathname = usePathname();
-
   useEffect(() => {
     // 1. Interceptar los clics en enlaces de Telegram
     const handleAnchorClick = (event) => {
@@ -19,36 +15,35 @@ export default function AppListener() {
 
     document.addEventListener('click', handleAnchorClick);
 
-    // 2. Controlar el botón "Atrás" nativo de Android de forma precisa
-    let backButtonListener;
-    async function setupBackButton() {
-      try {
-        backButtonListener = await App.addListener('backButton', () => {
-          // Si estamos en la página de inicio exacta, preguntamos si quiere salir
-          if (pathname === '/') {
-            const salir = window.confirm("¿Querés salir de CineChapu?");
-            if (salir) {
-              App.exitApp();
-            }
-          } else {
-            // Si estamos adentro de una película, saga, etc., retrocedemos una página en la web
-            router.back();
-          }
-        });
-      } catch (e) {
-        console.log("Capacitor no disponible en navegador web");
-      }
-    }
+    // 2. Truco de trampolín en el historial para atrapar el botón Atrás
+    // Empujamos un estado inicial para tener control de cuándo el usuario retrocede
+    window.history.pushState({ page: 'root' }, '', window.location.href);
 
-    setupBackButton();
+    const handlePopState = (event) => {
+      // Verificamos si estamos en la ruta principal o si podemos volver atrás
+      // Si el usuario está navegando dentro de la app, dejamos que el router actúe, 
+      // pero si intenta salir de la app, frenamos y preguntamos.
+      const salir = window.confirm("¿Querés salir de CineChapu?");
+      
+      if (salir) {
+        try {
+          App.exitApp();
+        } catch (e) {
+          window.close();
+        }
+      } else {
+        // Si cancela, volvemos a asegurar el estado en el historial para que no cierre
+        window.history.pushState({ page: 'root' }, '', window.location.href);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
 
     return () => {
       document.removeEventListener('click', handleAnchorClick);
-      if (backButtonListener) {
-        backButtonListener.remove();
-      }
+      window.removeEventListener('popstate', handlePopState);
     };
-  }, [pathname, router]);
+  }, []);
 
   return null;
 }
