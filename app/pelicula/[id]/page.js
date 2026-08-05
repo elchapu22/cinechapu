@@ -86,9 +86,12 @@ export default async function DetallePelicula({ params, searchParams }) {
       tagBusqueda = "pedro-infante";
     } else if (genero === "Elvis Presley") {
       tagBusqueda = "elvis";
+    } else if (genero === "Mundial 2026") {
+      tagBusqueda = "mundial-2026";
     } else {
       tagBusqueda = genero;
     }
+    
 
     // 3. Logica normal si no es una saga (filtros habituales o catalogo general)
     let sqlWhere = "";
