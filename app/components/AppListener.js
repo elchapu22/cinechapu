@@ -1,8 +1,12 @@
 'use client';
 import { useEffect } from 'react';
 import { App } from '@capacitor/app';
+import { useRouter, usePathname } from 'next/navigation';
 
 export default function AppListener() {
+  const router = useRouter();
+  const pathname = usePathname();
+
   useEffect(() => {
     // 1. Interceptar los clics en enlaces de Telegram
     const handleAnchorClick = (event) => {
@@ -15,33 +19,36 @@ export default function AppListener() {
 
     document.addEventListener('click', handleAnchorClick);
 
-    // 2. Truco de historial para frenar el botón "Atrás"
-    // Agregamos un estado fantasma al historial al cargar la página
-    window.history.pushState(null, '', window.location.href);
-
-    const handlePopState = (event) => {
-      // Cuando el usuario toca "atrás", el navegador vuelve al estado fantasma
-      const salir = window.confirm("¿Querés salir de CineChapu?");
-      if (salir) {
-        // Si acepta salir, cerramos la app (si está en Capacitor) o dejamos que salga
-        try {
-          App.exitApp();
-        } catch (e) {
-          window.close();
-        }
-      } else {
-        // Si cancela, volvemos a empujar el estado para que no se salga
-        window.history.pushState(null, '', window.location.href);
+    // 2. Controlar el botón "Atrás" nativo de Android de forma precisa
+    let backButtonListener;
+    async function setupBackButton() {
+      try {
+        backButtonListener = await App.addListener('backButton', () => {
+          // Si estamos en la página de inicio exacta, preguntamos si quiere salir
+          if (pathname === '/') {
+            const salir = window.confirm("¿Querés salir de CineChapu?");
+            if (salir) {
+              App.exitApp();
+            }
+          } else {
+            // Si estamos adentro de una película, saga, etc., retrocedemos una página en la web
+            router.back();
+          }
+        });
+      } catch (e) {
+        console.log("Capacitor no disponible en navegador web");
       }
-    };
+    }
 
-    window.addEventListener('popstate', handlePopState);
+    setupBackButton();
 
     return () => {
       document.removeEventListener('click', handleAnchorClick);
-      window.removeEventListener('popstate', handlePopState);
+      if (backButtonListener) {
+        backButtonListener.remove();
+      }
     };
-  }, []);
+  }, [pathname, router]);
 
   return null;
 }
