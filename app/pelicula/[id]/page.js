@@ -76,6 +76,18 @@ export default async function DetallePelicula({ params, searchParams }) {
       }
     }
   } else {
+    // Mapeo exacto del tag para que coincida con la base de datos
+    let tagBusqueda = "";
+    if (genero === "Charlie Chaplin") {
+      tagBusqueda = "chaplin";
+    } else if (genero === "Cantinflas") {
+      tagBusqueda = "cantinflas";
+    } else if (genero === "Pedro Infante") {
+      tagBusqueda = "pedro-infante";
+    } else {
+      tagBusqueda = genero;
+    }
+
     // 3. Logica normal si no es una saga (filtros habituales o catalogo general)
     let sqlWhere = "";
     let argsBase = [];
@@ -85,7 +97,7 @@ export default async function DetallePelicula({ params, searchParams }) {
       argsBase = [`%${busqueda.toLowerCase()}%`];
     } else if (genero) {
       sqlWhere = "tags LIKE ?";
-      argsBase = [`%${genero}%`];
+      argsBase = [`%${tagBusqueda}%`];
     } else if (letra) {
       sqlWhere = "LOWER(nombre) LIKE ?";
       argsBase = [`${letra.toLowerCase()}%`];
