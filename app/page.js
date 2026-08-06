@@ -30,7 +30,6 @@ export default async function Home({ searchParams }) {
   let peliculasPaginadas = [];
   let totalPeliculas = 0;
 
-  // Consultas optimizadas con Turso y serializadas a objetos planos
   const ultimasSubidasResult = await db.execute(`
     SELECT * FROM peliculas 
     ORDER BY RANDOM() 
@@ -38,10 +37,25 @@ export default async function Home({ searchParams }) {
   `);
   const ultimasSubidas = JSON.parse(JSON.stringify(ultimasSubidasResult.rows));
 
+  let tagBusqueda = "";
+  if (genero === "Charlie Chaplin") {
+    tagBusqueda = "chaplin";
+  } else if (genero === "Cantinflas") {
+    tagBusqueda = "cantinflas";
+  } else if (genero === "Pedro Infante") {
+    tagBusqueda = "pedro-infante";
+  } else if (genero === "Elvis Presley") {
+    tagBusqueda = "elvis";
+  } else if (genero === "Mundial 2026") {
+    tagBusqueda = "mundial-2026";
+  } else {
+    tagBusqueda = genero;
+  }
+
   if (busqueda) {
     const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
-      args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
+      sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
+      args: [`%${busqueda.toLowerCase()}%`, offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
 
@@ -52,24 +66,9 @@ export default async function Home({ searchParams }) {
     totalPeliculas = Number(resTotal.rows[0].count);
 
   } else if (genero) {
-    let tagBusqueda = "";
-    if (genero === "Charlie Chaplin") {
-      tagBusqueda = "chaplin";
-    } else if (genero === "Cantinflas") {
-      tagBusqueda = "cantinflas";
-    } else if (genero === "Pedro Infante") {
-      tagBusqueda = "pedro-infante";
-    } else if (genero === "Elvis Presley") {
-      tagBusqueda = "elvis";
-    } else if (genero === "Mundial 2026") {
-      tagBusqueda = "mundial-2026";
-    } else {
-      tagBusqueda = genero;
-    }
-
     const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE tags LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
-      args: [`%${tagBusqueda}%`, porPagina, offset]
+      sql: `SELECT * FROM peliculas WHERE tags LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
+      args: [`%${tagBusqueda}%`, offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
 
@@ -81,8 +80,8 @@ export default async function Home({ searchParams }) {
 
   } else if (letra) {
     const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
-      args: [`${letra.toLowerCase()}%`, porPagina, offset]
+      sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
+      args: [`${letra.toLowerCase()}%`, offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
 
@@ -94,8 +93,8 @@ export default async function Home({ searchParams }) {
 
   } else if (anio) {
     const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE nombre LIKE ? ORDER BY id LIMIT ? OFFSET ?`,
-      args: [`%(${anio})`, porPagina, offset]
+      sql: `SELECT * FROM peliculas WHERE nombre LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
+      args: [`%(${anio})`, offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
 
@@ -116,9 +115,9 @@ export default async function Home({ searchParams }) {
             ELSE 3 
           END, 
           RANDOM() 
-        LIMIT ? OFFSET ?
+        LIMIT 50 OFFSET ?
       `,
-      args: [porPagina, offset]
+      args: [offset]
     });
     peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
 
@@ -138,7 +137,6 @@ export default async function Home({ searchParams }) {
     }).filter(Boolean)
   )].sort((a, b) => b - a);
 
-  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS EN EL INICIO 🔥 ---
   const peliculasSuelta = [];
   const sagasAgrupadas = {};
 
@@ -160,8 +158,7 @@ export default async function Home({ searchParams }) {
     }
   });
 
-  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta];
-  // --------------------------------------------------------
+  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta].slice(0, porPagina);
 
   return (
     <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
@@ -232,7 +229,6 @@ export default async function Home({ searchParams }) {
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
                   {elementosMostrar.map((item) => (
                     item.esSaga ? (
-                      /* 👇 Tarjeta especial para Sagas/Colecciones */
                       <Link 
                         key={`saga-${item.id}`}
                         href={`/sagas/${item.id}`}
@@ -249,7 +245,6 @@ export default async function Home({ searchParams }) {
                         </div>
                       </Link>
                     ) : (
-                      /* 👇 Tarjeta normal de película */
                       <PeliculaCard 
                         key={`peli-${item.id}`} 
                         item={item} 

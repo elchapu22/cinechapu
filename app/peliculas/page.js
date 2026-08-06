@@ -30,8 +30,8 @@ export default async function PeliculasPage({ searchParams }) {
 
   if (busqueda) {
     const resultado = await sql.execute({
-      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
-      args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id DESC LIMIT 50 OFFSET ?",
+      args: [`%${busqueda.toLowerCase()}%`, offset]
     });
     peliculasPaginadas = resultado.rows;
 
@@ -42,8 +42,8 @@ export default async function PeliculasPage({ searchParams }) {
     totalPeliculas = Number(totalResultado.rows[0].count);
   } else if (letra) {
     const resultado = await sql.execute({
-      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
-      args: [`${letra.toLowerCase()}%`, porPagina, offset]
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id DESC LIMIT 50 OFFSET ?",
+      args: [`${letra.toLowerCase()}%`, offset]
     });
     peliculasPaginadas = resultado.rows;
 
@@ -54,8 +54,8 @@ export default async function PeliculasPage({ searchParams }) {
     totalPeliculas = Number(totalResultado.rows[0].count);
   } else {
     const resultado = await sql.execute({
-      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' ORDER BY id LIMIT ? OFFSET ?",
-      args: [porPagina, offset]
+      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) NOT LIKE '%(series)%' ORDER BY id DESC LIMIT 50 OFFSET ?",
+      args: [offset]
     });
     peliculasPaginadas = resultado.rows;
 
@@ -68,7 +68,7 @@ export default async function PeliculasPage({ searchParams }) {
   const totalPaginas = Math.ceil(totalPeliculas / porPagina) || 1;
   const abecedario = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
-  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS EN PELÍCULAS 🔥 ---
+  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS Y COMPLETAR EXACTAMENTE 24 TARJETAS 🔥 ---
   const peliculasSuelta = [];
   const sagasAgrupadas = {};
 
@@ -90,8 +90,8 @@ export default async function PeliculasPage({ searchParams }) {
     }
   });
 
-  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta];
-  // --------------------------------------------------------
+  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta].slice(0, porPagina);
+  // ------------------------------------------------------------------------
 
   return (
     <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
