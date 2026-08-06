@@ -58,6 +58,37 @@ export default async function AnimacionPage({ searchParams }) {
 
   const totalPaginas = Math.ceil(totalContenido / porPagina) || 1;
 
+  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS AQUI 🔥 ---
+  const peliculasSuelta = [];
+  const sagasAgrupadas = {};
+
+  contenidoPaginado.forEach((item) => {
+    // Si tiene id_saga (asumiendo que así se llama tu columna en Turso)
+    if (item.id_saga) {
+      if (!sagasAgrupadas[item.id_saga]) {
+        // Creamos la "Super Tarjeta" para la saga
+        sagasAgrupadas[item.id_saga] = {
+          esSaga: true, // Etiqueta para saber que es un grupo
+          id: item.id_saga,
+          // Si tenés el nombre de la saga en la BD ponelo acá. Sino, intentamos deducirlo del nombre:
+          nombre: `Colección ${limpiarNombre(item.nombre).split(' y ')[0].split(' el ')[0].split(' en ')[0]}`,
+          foto: item.foto, // Usamos la foto de la primera peli
+          cantidad: 1 // Contador de cuantas pelis encontró de esta saga
+        };
+      } else {
+        // Si ya existe la saga, solo sumamos al contador
+        sagasAgrupadas[item.id_saga].cantidad += 1;
+      }
+    } else {
+      // Si no tiene saga, va a las sueltas
+      peliculasSuelta.push({ ...item, esSaga: false });
+    }
+  });
+
+  // Juntamos todo en un solo array final para dibujar en pantalla
+  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta];
+  // ------------------------------------------------
+
   return (
     <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
@@ -86,23 +117,34 @@ export default async function AnimacionPage({ searchParams }) {
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
             <div className="text-zinc-400">
               <span className="text-red-500 font-semibold mr-2">Catálogo de Animación e Infantil</span>
-              Mostrando <span className="text-white font-bold">{contenidoPaginado.length}</span> de <span className="text-white font-bold">{totalContenido}</span>
+              Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> resultados agrupados
             </div>
           </div>
 
-          {contenidoPaginado.length > 0 ? (
+          {elementosMostrar.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {contenidoPaginado.map((item) => (
+              {elementosMostrar.map((item) => (
                 <Link 
-                  key={item.id} 
-                  href={`/pelicula/${item.id}`}
-                  className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
+                  key={item.esSaga ? `saga-${item.id}` : `peli-${item.id}`} 
+                  // 👇 Acá mandamos a la ruta de SAGA o de PELÍCULA dependiendo qué sea
+                  href={item.esSaga ? `/sagas/${item.id}` : `/pelicula/${item.id}`}
+                  className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group relative"
                 >
                   <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
                     <img src={item.foto || imagenGenerica} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
+                    
+                    {/* 👇 Etiqueta visual si es una saga agrupada */}
+                    {item.esSaga && (
+                      <div className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-10 border border-red-800">
+                        SAGA ({item.cantidad})
+                      </div>
+                    )}
+
                   </div>
                   <div className="p-2.5 flex-1 flex flex-col justify-between">
-                    <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(item.nombre)}</h3>
+                    <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">
+                      {item.esSaga ? item.nombre : limpiarNombre(item.nombre)}
+                    </h3>
                   </div>
                 </Link>
               ))}
