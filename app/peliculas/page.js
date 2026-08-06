@@ -68,6 +68,31 @@ export default async function PeliculasPage({ searchParams }) {
   const totalPaginas = Math.ceil(totalPeliculas / porPagina) || 1;
   const abecedario = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
+  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS EN PELÍCULAS 🔥 ---
+  const peliculasSuelta = [];
+  const sagasAgrupadas = {};
+
+  peliculasPaginadas.forEach((item) => {
+    if (item.id_saga) {
+      if (!sagasAgrupadas[item.id_saga]) {
+        sagasAgrupadas[item.id_saga] = {
+          esSaga: true,
+          id: item.id_saga,
+          nombre: `Colección ${limpiarNombre(item.nombre).split(' - ')[0].split(' | ')[0]}`,
+          foto: item.foto,
+          cantidad: 1
+        };
+      } else {
+        sagasAgrupadas[item.id_saga].cantidad += 1;
+      }
+    } else {
+      peliculasSuelta.push({ ...item, esSaga: false });
+    }
+  });
+
+  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta];
+  // --------------------------------------------------------
+
   return (
     <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
@@ -98,28 +123,48 @@ export default async function PeliculasPage({ searchParams }) {
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
                 <div className="text-zinc-400">
                   <span className="text-red-500 font-semibold mr-2">Catalogo de Peliculas</span>
-                  Mostrando <span className="text-white font-bold">{peliculasPaginadas.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span>
+                  Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span>
                 </div>
                 {(busqueda || letra) && (
                   <Link href="/peliculas" className="text-xs text-red-400 hover:underline">Limpiar filtros ✕</Link>
                 )}
               </div>
 
-              {peliculasPaginadas.length > 0 ? (
+              {elementosMostrar.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                  {peliculasPaginadas.map((pelicula) => (
-                    <Link 
-                      key={pelicula.id} 
-                      href={`/pelicula/${pelicula.id}`}
-                      className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
-                    >
-                      <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
-                        <img src={pelicula.foto || imagenGenerica} alt={pelicula.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
-                      </div>
-                      <div className="p-2.5 flex-1 flex flex-col justify-between">
-                        <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(pelicula.nombre)}</h3>
-                      </div>
-                    </Link>
+                  {elementosMostrar.map((item) => (
+                    item.esSaga ? (
+                      /* 👇 Tarjeta especial para Sagas */
+                      <Link 
+                        key={`saga-${item.id}`} 
+                        href={`/sagas/${item.id}`}
+                        className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group relative"
+                      >
+                        <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
+                          <img src={item.foto || imagenGenerica} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
+                          <div className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-10 border border-red-800">
+                            SAGA ({item.cantidad})
+                          </div>
+                        </div>
+                        <div className="p-2.5 flex-1 flex flex-col justify-between">
+                          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{item.nombre}</h3>
+                        </div>
+                      </Link>
+                    ) : (
+                      /* 👇 Tarjeta normal de película */
+                      <Link 
+                        key={`pelicula-${item.id}`} 
+                        href={`/pelicula/${item.id}`}
+                        className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
+                      >
+                        <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
+                          <img src={item.foto || imagenGenerica} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
+                        </div>
+                        <div className="p-2.5 flex-1 flex flex-col justify-between">
+                          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(item.nombre)}</h3>
+                        </div>
+                      </Link>
+                    )
                   ))}
                 </div>
               ) : (

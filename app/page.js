@@ -2,7 +2,7 @@ import { createClient } from '@libsql/client';
 import Link from 'next/link';
 import PeliculaCard from './components/PeliculaCard';
 import CarruselEstrenos from './components/CarruselEstrenos';
-import AppListener from './components/AppListener'; // <--- 1. Importamos el componente nativo
+import AppListener from './components/AppListener';
 
 // Configuracion de Turso
 const db = createClient({
@@ -52,20 +52,19 @@ export default async function Home({ searchParams }) {
     totalPeliculas = Number(resTotal.rows[0].count);
 
   } else if (genero) {
-    // Mapeo exacto del tag que guardaste en la base de datos para cada colección
     let tagBusqueda = "";
     if (genero === "Charlie Chaplin") {
-      tagBusqueda = "chaplin"; // Asegurate de poner este tag en las pelis de Chaplin en tu BD
+      tagBusqueda = "chaplin";
     } else if (genero === "Cantinflas") {
       tagBusqueda = "cantinflas";
     } else if (genero === "Pedro Infante") {
       tagBusqueda = "pedro-infante";
-    }
-    else if (genero === "Elvis Presley") {
+    } else if (genero === "Elvis Presley") {
       tagBusqueda = "elvis";
-    }
-    else if (genero === "Mundial 2026") {
+    } else if (genero === "Mundial 2026") {
       tagBusqueda = "mundial-2026";
+    } else {
+      tagBusqueda = genero;
     }
 
     const resPeli = await db.execute({
@@ -139,9 +138,33 @@ export default async function Home({ searchParams }) {
     }).filter(Boolean)
   )].sort((a, b) => b - a);
 
+  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS EN EL INICIO 🔥 ---
+  const peliculasSuelta = [];
+  const sagasAgrupadas = {};
+
+  peliculasPaginadas.forEach((item) => {
+    if (item.id_saga) {
+      if (!sagasAgrupadas[item.id_saga]) {
+        sagasAgrupadas[item.id_saga] = {
+          esSaga: true,
+          id: item.id_saga,
+          nombre: `Colección ${limpiarNombre(item.nombre).split(' - ')[0].split(' | ')[0]}`,
+          foto: item.foto,
+          cantidad: 1
+        };
+      } else {
+        sagasAgrupadas[item.id_saga].cantidad += 1;
+      }
+    } else {
+      peliculasSuelta.push({ ...item, esSaga: false });
+    }
+  });
+
+  const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta];
+  // --------------------------------------------------------
+
   return (
     <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
-      {/* 2. Activamos el componente de Capacitor acá */}
       <AppListener />
 
       <div>
@@ -196,7 +219,7 @@ export default async function Home({ searchParams }) {
                   {letra && <span className="mr-2 text-red-500 font-semibold">Letra: {letra.toUpperCase()}</span>}
                   {genero && <span className="mr-2 text-red-500 font-semibold">Colección: {genero}</span>}
                   {anio && <span className="mr-2 text-red-500 font-semibold">Año: {anio}</span>}
-                  Mostrando <span className="text-white font-bold">{peliculasPaginadas.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span> resultados
+                  Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span>
                 </div>
                 {(busqueda || letra || genero || anio) && (
                   <Link href="/" className="text-xs text-red-400 hover:underline">
@@ -205,14 +228,34 @@ export default async function Home({ searchParams }) {
                 )}
               </div>
 
-              {peliculasPaginadas.length > 0 ? (
+              {elementosMostrar.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                  {peliculasPaginadas.map((item) => (
-                    <PeliculaCard 
-                      key={item.id} 
-                      item={item} 
-                      imagenGenerica={imagenGenerica} 
-                    />
+                  {elementosMostrar.map((item) => (
+                    item.esSaga ? (
+                      /* 👇 Tarjeta especial para Sagas/Colecciones */
+                      <Link 
+                        key={`saga-${item.id}`}
+                        href={`/sagas/${item.id}`}
+                        className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group relative"
+                      >
+                        <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
+                          <img src={item.foto || imagenGenerica} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
+                          <div className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-10 border border-red-800">
+                            SAGA ({item.cantidad})
+                          </div>
+                        </div>
+                        <div className="p-2.5 flex-1 flex flex-col justify-between">
+                          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{item.nombre}</h3>
+                        </div>
+                      </Link>
+                    ) : (
+                      /* 👇 Tarjeta normal de película */
+                      <PeliculaCard 
+                        key={`peli-${item.id}`} 
+                        item={item} 
+                        imagenGenerica={imagenGenerica} 
+                      />
+                    )
                   ))}
                 </div>
               ) : (
