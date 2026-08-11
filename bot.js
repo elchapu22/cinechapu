@@ -101,6 +101,8 @@ async function obtenerActores(movieId) {
 }
 
 // Cuando mandes mensajes al bot
+// Cuando mandes mensajes al bot
+// Cuando mandes mensajes al bot
 bot.on('text', async (ctx) => {
   const texto = ctx.message.text;
   const entradas = texto.split('\n').map(p => p.trim()).filter(Boolean);
@@ -112,37 +114,32 @@ bot.on('text', async (ctx) => {
   for (const entrada of entradas) {
     try {
       let peli = null;
-      let nombreBase = "";
 
-      // SI LA ENTRADA ES UN NÚMERO PURO (Ej: 1433735), BUSCAMOS DIRECTO POR ID
+      // SI LA ENTRADA ES UN NÚMERO PURO, ES UN ID DE TMDB
       if (/^\d+$/.test(entrada)) {
         console.log(`Buscando por ID exacto en TMDB: ${entrada}`);
         peli = await buscarPorIdEnTmdb(entrada);
-        if (peli) {
-          nombreBase = peli.title; // Usamos el título oficial limpio de TMDB para buscar en Turso
-        }
       } else {
-        // SINO, MANTENEMOS EL BUSCADOR POR NOMBRE DE ANTES
-        let busquedaLimpieza = entrada.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').replace(/\.avi/gi, '');
-        busquedaLimpieza = busquedaLimpieza.replace(/\(\d{4}\)/g, '').trim();
+        // SINO, ES TEXTO: Limpiamos el año para buscar bien en TMDB
+        let textoLimpio = entrada.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').replace(/\.avi/gi, '').trim();
+        let queryTmdb = textoLimpio.replace(/\(\d{4}\)/, '').trim();
 
-        console.log(`Buscando por texto en TMDB (MX): "${busquedaLimpieza}"`);
+        console.log(`Buscando por texto en TMDB (MX): "${queryTmdb}"`);
 
-        let results = await buscarEnTmdb(busquedaLimpieza);
+        let results = await buscarEnTmdb(queryTmdb);
 
-        if (results.length === 0 && busquedaLimpieza.includes(':')) {
-          const principal = busquedaLimpieza.split(':')[0].trim();
+        if (results.length === 0 && queryTmdb.includes(':')) {
+          const principal = queryTmdb.split(':')[0].trim();
           results = await buscarEnTmdb(principal);
         }
 
         if (results.length > 0) {
           peli = results[0];
-          nombreBase = entrada.replace(/\.mp4/gi, '').replace(/\.mkv/gi, '').trim();
         }
       }
 
       if (peli) {
-        console.log(`> ¡Encontrado!: "${peli.title}" (ID: ${peli.id})`);
+        console.log(`> ¡Encontrado en TMDB!: "${peli.title}" (ID TMDB: ${peli.id})`);
         
         const resumen = peli.overview || '';
         const foto = peli.poster_path ? `https://image.tmdb.org/t/p/w500${peli.poster_path}` : '';
@@ -152,17 +149,43 @@ bot.on('text', async (ctx) => {
         const director = await obtenerDirector(peli.id);
         const actores = await obtenerActores(peli.id);
 
-        // Actualizamos en Turso
-        const resultado = await db.execute({
-          sql: `UPDATE peliculas SET resumen = ?, foto = ?, director = ?, actores = ?, anio = ?, calificacion = ? WHERE LOWER(nombre) LIKE LOWER(?)`,
-          args: [resumen, foto, director, actores, anio, calificacion, `%${nombreBase}%`]
+        // TRUCO INFALIBLE: Traemos todas las películas de Turso para buscar la coincidencia exacta desde Node.js
+        const { rows } = await db.execute("SELECT id, nombre FROM peliculas");
+        
+        // Función casera para normalizar textos (quita acentos, puntos, dos puntos y pasa a minúsculas)
+        const normalizar = (str) => {
+          return str.toLowerCase()
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // saca tildes
+            .replace(/[.:,\-\(\)]/g, ' ') // saca símbolos
+            .replace(/\s+/g, ' ') // espacios múltiples
+            .trim();
+        };
+
+        const entradaNormalizada = normalizar(entrada.replace(/^\d+$/, peli.title)); // Si fue ID, usa el título de TMDB
+        
+        // Buscamos la película en el array de Turso que mejor coincida
+        let peliculaEncontradaEnTurso = rows.find(row => {
+          const nombreTursoNorm = normalizar(row.nombre);
+          return nombreTursoNorm.includes(normalizar(peli.title)) || normalizar(peli.title).includes(nombreTursoNorm);
         });
 
-        console.log(`> Filas actualizadas en Turso: ${resultado.rowsAffected}`);
+        if (peliculaEncontradaEnTurso) {
+          console.log(`> Matcheó con "${peliculaEncontradaEnTurso.nombre}" en Turso (ID interno: ${peliculaEncontradaEnTurso.id})`);
 
-        if (resultado.rowsAffected > 0) {
-          count++;
+          // Actualizamos directo usando el ID exacto de la fila en Turso
+          const resultado = await db.execute({
+            sql: `UPDATE peliculas SET resumen = ?, foto = ?, director = ?, actores = ?, anio = ?, calificacion = ? WHERE id = ?`,
+            args: [resumen, foto, director, actores, anio, calificacion, peliculaEncontradaEnTurso.id]
+          });
+
+          console.log(`> Filas actualizadas en Turso: ${resultado.rowsAffected}`);
+          if (resultado.rowsAffected > 0) {
+            count++;
+          }
+        } else {
+          console.log(`❌ No se encontró coincidencia de nombre en Turso para actualizar.`);
         }
+
       } else {
         console.log(`❌ No se encontró nada en TMDB para: ${entrada}`);
       }
@@ -175,4 +198,4 @@ bot.on('text', async (ctx) => {
 });
 
 bot.launch();
-console.log("🤖 Bot de Telegram corriendo con soporte dual (Texto e ID exacto)...");
+console.log("🤖 Bot de Telegram corriendo con soporte dual y limpieza de acentos/puntos...");

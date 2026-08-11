@@ -29,33 +29,37 @@ async function sincronizarNuevasPorNombre() {
     for (const p of registros) {
       const nombreLimpio = String(p.nombre || '').trim().toLowerCase();
       
-      // Si el nombre NO está en Turso, lo agregamos
+      // Si el nombre NO está en Turso, lo agregamos como NUEVO registro
       if (nombreLimpio && !nombresEnTurso.has(nombreLimpio)) {
-        await dbRemoto.execute({
-          sql: `INSERT INTO peliculas (id, nombre, link, tags, id_saga, foto, resumen, calificacion, director, anio, actores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          args: [
-            Number(p.id), 
-            p.nombre || '', 
-            p.link || '', 
-            p.tags || '', 
-            p.id_saga || '', 
-            p.foto || '', 
-            p.resumen || '', 
-            p.calificacion || '', 
-            p.director || '', 
-            p.anio || '', 
-            p.actores || ''
-          ]
-        });
-        nombresEnTurso.add(nombreLimpio); // Lo agregamos al Set para evitar duplicados dentro del mismo CSV
-        insertadas++;
-        console.log(`-> Agregada nueva: [ID ${p.id}] ${p.nombre}`);
+        try {
+          await dbRemoto.execute({
+            // Omitimos el 'id' en el INSERT para que Turso le asigne uno nuevo automáticamente y no choque
+            sql: `INSERT INTO peliculas (nombre, link, tags, id_saga, foto, resumen, calificacion, director, anio, actores) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            args: [
+              p.nombre || '', 
+              p.link || '', 
+              p.tags || '', 
+              p.id_saga || '', 
+              p.foto || '', 
+              p.resumen || '', 
+              p.calificacion || '', 
+              p.director || '', 
+              p.anio || '', 
+              p.actores || ''
+            ]
+          });
+          nombresEnTurso.add(nombreLimpio); // Lo agregamos al Set para evitar duplicados dentro del mismo CSV
+          insertadas++;
+          console.log(`-> Agregada nueva: ${p.nombre}`);
+        } catch (err) {
+          console.error(`❌ Error al intentar insertar "${p.nombre}":`, err.message);
+        }
       }
     }
 
-    console.log(`\n¡Sincronización completada con éxito! Se agregaron ${insertadas} películas nuevas.`);
+    console.log(`\n¡Sincronización completada con éxito! Se agregaron ${insertadas} películas nuevas sin tocar las anteriores.`);
   } catch (error) {
-    console.error("Error durante la sincronización:", error);
+    console.error("Error general durante la sincronización:", error);
   }
 }
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import PeliculaCard from './components/PeliculaCard';
 import CarruselEstrenos from './components/CarruselEstrenos';
 import AppListener from './components/AppListener';
+import BienvenidaCanal from './components/BienvenidaCanal';
 
 // Configuracion de Turso
 const db = createClient({
@@ -52,7 +53,7 @@ export default async function Home({ searchParams }) {
     tagBusqueda = genero;
   }
 
-  if (busqueda) {
+if (busqueda) {
     const resPeli = await db.execute({
       sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
       args: [`%${busqueda.toLowerCase()}%`, offset]
@@ -146,7 +147,7 @@ export default async function Home({ searchParams }) {
         sagasAgrupadas[item.id_saga] = {
           esSaga: true,
           id: item.id_saga,
-          nombre: `Colección ${limpiarNombre(item.nombre).split(' - ')[0].split(' | ')[0]}`,
+          nombre: `Coleccion ${limpiarNombre(item.nombre).split(' - ')[0].split(' | ')[0]}`,
           foto: item.foto,
           cantidad: 1
         };
@@ -163,6 +164,7 @@ export default async function Home({ searchParams }) {
   return (
     <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <AppListener />
+      <BienvenidaCanal />
 
       <div>
         <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
@@ -214,7 +216,7 @@ export default async function Home({ searchParams }) {
                 <div className="text-zinc-400">
                   {busqueda && <span className="mr-2 text-red-500 font-semibold">Buscando: "{busqueda}"</span>}
                   {letra && <span className="mr-2 text-red-500 font-semibold">Letra: {letra.toUpperCase()}</span>}
-                  {genero && <span className="mr-2 text-red-500 font-semibold">Colección: {genero}</span>}
+                  {genero && <span className="mr-2 text-red-500 font-semibold">Coleccion: {genero}</span>}
                   {anio && <span className="mr-2 text-red-500 font-semibold">Año: {anio}</span>}
                   Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span>
                 </div>
@@ -226,7 +228,7 @@ export default async function Home({ searchParams }) {
               </div>
 
               {elementosMostrar.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
                   {elementosMostrar.map((item) => (
                     item.esSaga ? (
                       <Link 
