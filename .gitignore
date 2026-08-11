@@ -39,3 +39,17 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# --- AGREGADOS PARA CINECHAPU ---
+# Scripts de prueba y utilidades locales
+botprueba*.js
+migrador.js
+ver_datos.js
+
+# Archivos de datos / CSVs pesados
+*.csv
+
+# Carpetas de Android e IDEs
+android/
+.idea/
+.vscode/
