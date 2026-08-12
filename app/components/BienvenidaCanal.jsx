@@ -14,7 +14,7 @@ export default function BienvenidaCanal() {
       setMinimizado(true);
       const timer = setTimeout(() => {
         setExpandidoFlotante(false);
-      }, 4000);
+      }, 3500);
       return () => clearTimeout(timer);
     }
   }, []);
@@ -32,7 +32,13 @@ export default function BienvenidaCanal() {
     
     setTimeout(() => {
       setExpandidoFlotante(false);
-    }, 4000);
+    }, 3500);
+  };
+
+  const handleCerrarCompletamente = (e) => {
+    e.stopPropagation();
+    localStorage.setItem('cinechapu_bienvenida_vista', 'visto');
+    setMinimizado(false);
   };
 
   const handleMaximizar = (e) => {
@@ -75,55 +81,56 @@ export default function BienvenidaCanal() {
         <div 
           style={{ 
             position: 'fixed', 
-            bottom: '70px', 
-            right: '16px', 
+            bottom: '75px', 
+            right: '12px', 
             zIndex: 99999, 
             backgroundColor: '#131b2e', 
             border: '1px solid rgba(220, 38, 38, 0.6)',
-            borderRadius: '14px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.8)', 
-            padding: '8px 12px',
+            borderRadius: '12px',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.8)', 
+            padding: '6px 10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
+            gap: '6px',
             transition: 'all 0.3s ease'
           }}
         >
           {expandidoFlotante ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '11px', color: '#d1d5db', fontWeight: '500' }}>💬 ¡Canal!</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '10px', color: '#d1d5db', fontWeight: '500' }}>💬 ¡Canal!</span>
               <a 
                 href="LINK_DE_TU_CANAL_DE_TELEGRAM" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 onClick={handleUnirse}
-                style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '11px', padding: '5px 10px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none' }}
+                style={{ backgroundColor: '#dc2626', color: '#ffffff', fontSize: '10px', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold', textDecoration: 'none' }}
               >
                 Entrar 🚀
               </a>
               <button 
                 onClick={() => setExpandidoFlotante(false)}
-                style={{ backgroundColor: '#27272a', border: 'none', color: '#9ca3af', fontSize: '10px', cursor: 'pointer', padding: '4px 6px', borderRadius: '6px' }}
+                style={{ backgroundColor: '#27272a', border: 'none', color: '#9ca3af', fontSize: '9px', cursor: 'pointer', padding: '3px 5px', borderRadius: '4px' }}
                 title="Minimizar botón"
               >
-                ✕
+                ◀
               </button>
             </div>
           ) : (
             <button 
               onClick={() => setExpandidoFlotante(true)}
-              style={{ backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
             >
-              💬 <span>¡Unite al Canal!</span> ⬅
+              💬 <span>Unite</span> ◀
             </button>
           )}
 
+          {/* Botón para cerrar por completo el flotante */}
           <button 
-            onClick={handleMaximizar}
-            style={{ backgroundColor: 'transparent', border: 'none', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '2px', borderLeft: '1px solid #3f3f46', paddingLeft: '6px' }}
-            title="Ver cartel principal"
+            onClick={handleCerrarCompletamente}
+            style={{ backgroundColor: '#dc2626', border: 'none', color: '#ffffff', fontSize: '11px', cursor: 'pointer', padding: '3px 6px', borderRadius: '6px', fontWeight: 'bold' }}
+            title="Cerrar"
           >
-            🔄
+            ✕
           </button>
         </div>
       )}
