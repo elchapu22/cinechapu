@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 export default function BienvenidaCanal() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [minimizado, setMinimizado] = useState(false);
-  const [expandidoFlotante, setExpandidoFlotante] = useState(true); // Arranca abierto para que se vea bien
+  const [expandidoFlotante, setExpandidoFlotante] = useState(true);
 
   useEffect(() => {
     const yaVioBienvenida = localStorage.getItem('cinechapu_bienvenida_vista');
@@ -36,7 +36,7 @@ export default function BienvenidaCanal() {
   return (
     <>
       {modalAbierto && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', padding: '16px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 99999, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', padding: '16px' }}>
           <div style={{ backgroundColor: '#131b2e', border: '1px solid rgba(220, 38, 38, 0.5)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '280px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ef4444', marginBottom: '8px' }}>¡Bienvenido a CineChapu! 🍿</h2>
             <p style={{ fontSize: '11px', color: '#d1d5db', lineHeight: '1.4', marginBottom: '16px' }}>
@@ -67,13 +67,13 @@ export default function BienvenidaCanal() {
         <div 
           style={{ 
             position: 'fixed', 
-            bottom: '24px', 
-            right: '16px', // Separado del borde para que no se corte en la APK
+            bottom: '40px',   // Subido más arriba para que no lo tape la barra del celu
+            right: '20px',    // Separado del borde derecho
             zIndex: 99999, 
             backgroundColor: '#131b2e', 
-            border: '1px solid rgba(220, 38, 38, 0.5)',
+            border: '1px solid rgba(220, 38, 38, 0.6)',
             borderRadius: '14px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.7)', 
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.8)', 
             padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
@@ -109,7 +109,6 @@ export default function BienvenidaCanal() {
             </button>
           )}
 
-          {/* Botón para volver al cartel grande */}
           <button 
             onClick={handleMaximizar}
             style={{ backgroundColor: 'transparent', border: 'none', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '2px', borderLeft: '1px solid #3f3f46', paddingLeft: '6px' }}
