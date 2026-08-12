@@ -34,25 +34,25 @@ export default function BienvenidaCanal() {
   return (
     <>
       {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="bg-[#131b2e] border border-red-600/50 p-4 rounded-2xl w-full max-w-[300px] text-center shadow-2xl mx-auto">
-            <h2 className="text-lg font-bold text-red-500 mb-1.5">¡Bienvenido a CineChapu! 🍿</h2>
-            <p className="text-zinc-300 text-[11px] leading-relaxed mb-4">
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', padding: '16px' }}>
+          <div style={{ backgroundColor: '#131b2e', border: '1px solid rgba(220, 38, 38, 0.5)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '280px', textAlign: 'center', boxChannel: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ef4444', marginBottom: '8px' }}>¡Bienvenido a CineChapu! 🍿</h2>
+            <p style={{ fontSize: '11px', color: '#d1d5db', lineHeight: '1.4', marginBottom: '16px' }}>
               Este es un catálogo privado. ¡Sumate al canal oficial de Telegram para enterarte de todos los estrenos y pedir tus pelis!
             </p>
-            <div className="flex flex-col gap-2">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <a 
                 href="LINK_DE_TU_CANAL_DE_TELEGRAM" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 onClick={handleUnirse}
-                className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl font-medium transition text-xs"
+                style={{ backgroundColor: '#dc2626', color: '#ffffff', padding: '10px', borderRadius: '10px', fontWeight: '500', fontSize: '12px', textDecoration: 'none', display: 'block' }}
               >
                 Unirme al Canal 🚀
               </a>
               <button 
                 onClick={handleMinimizar}
-                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 py-2 rounded-xl font-medium transition text-xs"
+                style={{ backgroundColor: '#27272a', color: '#d1d5db', padding: '10px', borderRadius: '10px', fontWeight: '500', fontSize: '12px', border: 'none', cursor: 'pointer', width: '100%' }}
               >
                 Minimizar ↘
               </button>
