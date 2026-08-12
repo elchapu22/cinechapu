@@ -1,5 +1,4 @@
 'use client';
-import { useState, useEffect } from 'TR-REACT'; // (mantené tus imports normales de react)
 import { useState, useEffect } from 'react';
 
 export default function BienvenidaCanal() {
@@ -13,7 +12,6 @@ export default function BienvenidaCanal() {
       setModalAbierto(true);
     } else if (yaVioBienvenida === 'minimizado') {
       setMinimizado(true);
-      // 🔥 Auto-colapsar a los 4 segundos de aparecer minimizado
       const timer = setTimeout(() => {
         setExpandidoFlotante(false);
       }, 4000);
@@ -32,7 +30,6 @@ export default function BienvenidaCanal() {
     setModalAbierto(false);
     setMinimizado(true);
     
-    // 🔥 Auto-colapsar también si minimiza manualmente desde el cartel grande
     setTimeout(() => {
       setExpandidoFlotante(false);
     }, 4000);
@@ -78,8 +75,8 @@ export default function BienvenidaCanal() {
         <div 
           style={{ 
             position: 'fixed', 
-            bottom: '70px',   // 👈 Lo subimos más para que escape de la barra inferior del celu
-            right: '16px',    // 👈 Bien metido adentro para que no se corte
+            bottom: '70px', 
+            right: '16px', 
             zIndex: 99999, 
             backgroundColor: '#131b2e', 
             border: '1px solid rgba(220, 38, 38, 0.6)',
