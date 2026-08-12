@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
+export const dynamic = 'force-dynamic';
 
 const sql = createClient({
   url: process.env.TURSO_DATABASE_URL,
@@ -23,10 +24,12 @@ export default async function AnimacionPage({ searchParams }) {
   let contenidoPaginado = [];
   let totalContenido = 0;
 
+  const filtroTags = `(LOWER(TRIM(tags)) = 'animacion' OR LOWER(TRIM(tags)) LIKE '%animacion%')`;
+
   if (busqueda) {
     const resultado = await sql.execute({
       sql: `SELECT * FROM peliculas 
-            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%')
+            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animacion%')
             AND LOWER(nombre) LIKE ? 
             ORDER BY id LIMIT ? OFFSET ?`,
       args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
@@ -35,23 +38,29 @@ export default async function AnimacionPage({ searchParams }) {
 
     const totalResultado = await sql.execute({
       sql: `SELECT COUNT(*) as count FROM peliculas 
-            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%')
+            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animacion%')
             AND LOWER(nombre) LIKE ?`,
       args: [`%${busqueda.toLowerCase()}%`]
     });
     totalContenido = Number(totalResultado.rows[0].count);
-  } else {
+} else {
     const resultado = await sql.execute({
       sql: `SELECT * FROM peliculas 
-            WHERE LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%' 
-            ORDER BY id LIMIT ? OFFSET ?`,
-      args: [porPagina, offset]
+            WHERE LOWER(tags) LIKE '%infantil%' 
+               OR LOWER(tags) LIKE '%anime%' 
+               OR LOWER(tags) LIKE '%animacion%' 
+               OR LOWER(tags) LIKE '%animacion%' 
+            ORDER BY id LIMIT 200`,
+      args: []
     });
     contenidoPaginado = resultado.rows;
 
     const totalResultado = await sql.execute({
       sql: `SELECT COUNT(*) as count FROM peliculas 
-            WHERE LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animación%'`
+            WHERE LOWER(tags) LIKE '%infantil%' 
+               OR LOWER(tags) LIKE '%anime%' 
+               OR LOWER(tags) LIKE '%animacion%' 
+               OR LOWER(tags) LIKE '%animacion%'`
     });
     totalContenido = Number(totalResultado.rows[0].count);
   }
@@ -63,17 +72,17 @@ export default async function AnimacionPage({ searchParams }) {
   const sagasAgrupadas = {};
 
   contenidoPaginado.forEach((item) => {
-    // Si tiene id_saga (asumiendo que así se llama tu columna en Turso)
+    // Si tiene id_saga (asumiendo que asi se llama tu columna en Turso)
     if (item.id_saga) {
       if (!sagasAgrupadas[item.id_saga]) {
         // Creamos la "Super Tarjeta" para la saga
         sagasAgrupadas[item.id_saga] = {
           esSaga: true, // Etiqueta para saber que es un grupo
           id: item.id_saga,
-          // Si tenés el nombre de la saga en la BD ponelo acá. Sino, intentamos deducirlo del nombre:
-          nombre: `Colección ${limpiarNombre(item.nombre).split(' y ')[0].split(' el ')[0].split(' en ')[0]}`,
+          // Si tenes el nombre de la saga en la BD ponelo aca. Sino, intentamos deducirlo del nombre:
+          nombre: `Coleccion ${limpiarNombre(item.nombre).split(' y ')[0].split(' el ')[0].split(' en ')[0]}`,
           foto: item.foto, // Usamos la foto de la primera peli
-          cantidad: 1 // Contador de cuantas pelis encontró de esta saga
+          cantidad: 1 // Contador de cuantas pelis encontro de esta saga
         };
       } else {
         // Si ya existe la saga, solo sumamos al contador
@@ -97,7 +106,7 @@ export default async function AnimacionPage({ searchParams }) {
             <Link href="/" className="text-xl font-black tracking-widest text-red-600">CineChapu</Link>
             <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
               <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-              <Link href="/peliculas" className="hover:text-white transition-colors">Películas</Link>
+              <Link href="/peliculas" className="hover:text-white transition-colors">Peliculas</Link>
               <Link href="/series" className="hover:text-white transition-colors">Series</Link>
               <Link href="/animacion" className="text-white hover:text-red-500 transition-colors">Animacion</Link>
             </nav>
@@ -106,7 +115,7 @@ export default async function AnimacionPage({ searchParams }) {
                 type="text" 
                 name="busqueda" 
                 defaultValue={busqueda}
-                placeholder="Buscar animación..." 
+                placeholder="Buscar animacion..." 
                 className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
               />
             </form>
@@ -116,7 +125,7 @@ export default async function AnimacionPage({ searchParams }) {
         <section className="max-w-[1400px] mx-auto px-6 py-8">
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
             <div className="text-zinc-400">
-              <span className="text-red-500 font-semibold mr-2">Catálogo de Animación e Infantil</span>
+              <span className="text-red-500 font-semibold mr-2">Catalogo de Animacion e Infantil</span>
               Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> resultados agrupados
             </div>
           </div>
@@ -126,7 +135,7 @@ export default async function AnimacionPage({ searchParams }) {
               {elementosMostrar.map((item) => (
                 <Link 
                   key={item.esSaga ? `saga-${item.id}` : `peli-${item.id}`} 
-                  // 👇 Acá mandamos a la ruta de SAGA o de PELÍCULA dependiendo qué sea
+                  // 👇 Aca mandamos a la ruta de SAGA o de PELICULA dependiendo que sea
                   href={item.esSaga ? `/sagas/${item.id}` : `/pelicula/${item.id}`}
                   className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group relative"
                 >
@@ -151,7 +160,7 @@ export default async function AnimacionPage({ searchParams }) {
             </div>
           ) : (
             <div className="text-center py-20 text-zinc-500 bg-[#131b2e]/30 rounded-lg border border-zinc-800/40">
-              No se encontraron contenidos de animación.
+              No se encontraron contenidos de animacion.
             </div>
           )}
         </section>
