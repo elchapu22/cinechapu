@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'TR-REACT'; // (mantené tus imports normales de react)
 import { useState, useEffect } from 'react';
 
 export default function BienvenidaCanal() {
@@ -12,6 +13,11 @@ export default function BienvenidaCanal() {
       setModalAbierto(true);
     } else if (yaVioBienvenida === 'minimizado') {
       setMinimizado(true);
+      // 🔥 Auto-colapsar a los 4 segundos de aparecer minimizado
+      const timer = setTimeout(() => {
+        setExpandidoFlotante(false);
+      }, 4000);
+      return () => clearTimeout(timer);
     }
   }, []);
 
@@ -25,6 +31,11 @@ export default function BienvenidaCanal() {
     localStorage.setItem('cinechapu_bienvenida_vista', 'minimizado');
     setModalAbierto(false);
     setMinimizado(true);
+    
+    // 🔥 Auto-colapsar también si minimiza manualmente desde el cartel grande
+    setTimeout(() => {
+      setExpandidoFlotante(false);
+    }, 4000);
   };
 
   const handleMaximizar = (e) => {
@@ -36,7 +47,7 @@ export default function BienvenidaCanal() {
   return (
     <>
       {modalAbierto && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 99999, display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', padding: '16px' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(4px)', padding: '16px' }}>
           <div style={{ backgroundColor: '#131b2e', border: '1px solid rgba(220, 38, 38, 0.5)', borderRadius: '16px', padding: '20px', width: '100%', maxWidth: '280px', textAlign: 'center', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#ef4444', marginBottom: '8px' }}>¡Bienvenido a CineChapu! 🍿</h2>
             <p style={{ fontSize: '11px', color: '#d1d5db', lineHeight: '1.4', marginBottom: '16px' }}>
@@ -67,8 +78,8 @@ export default function BienvenidaCanal() {
         <div 
           style={{ 
             position: 'fixed', 
-            bottom: '40px',   // Subido más arriba para que no lo tape la barra del celu
-            right: '20px',    // Separado del borde derecho
+            bottom: '70px',   // 👈 Lo subimos más para que escape de la barra inferior del celu
+            right: '16px',    // 👈 Bien metido adentro para que no se corte
             zIndex: 99999, 
             backgroundColor: '#131b2e', 
             border: '1px solid rgba(220, 38, 38, 0.6)',
@@ -77,7 +88,8 @@ export default function BienvenidaCanal() {
             padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '8px',
+            transition: 'all 0.3s ease'
           }}
         >
           {expandidoFlotante ? (
@@ -97,15 +109,15 @@ export default function BienvenidaCanal() {
                 style={{ backgroundColor: '#27272a', border: 'none', color: '#9ca3af', fontSize: '10px', cursor: 'pointer', padding: '4px 6px', borderRadius: '6px' }}
                 title="Minimizar botón"
               >
-                ◀
+                ✕
               </button>
             </div>
           ) : (
             <button 
               onClick={() => setExpandidoFlotante(true)}
-              style={{ backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              style={{ backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              💬 <span>Unite</span> ▶
+              💬 <span>¡Unite al Canal!</span> ⬅
             </button>
           )}
 
