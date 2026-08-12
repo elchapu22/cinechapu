@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 export default function BienvenidaCanal() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [minimizado, setMinimizado] = useState(false);
-  const [expandidoFlotante, setExpandidoFlotante] = useState(false);
+  const [expandidoFlotante, setExpandidoFlotante] = useState(true); // Arranca abierto para que se vea bien
 
   useEffect(() => {
     const yaVioBienvenida = localStorage.getItem('cinechapu_bienvenida_vista');
@@ -65,31 +65,24 @@ export default function BienvenidaCanal() {
 
       {minimizado && (
         <div 
-          onClick={() => setExpandidoFlotante(!expandidoFlotante)}
           style={{ 
             position: 'fixed', 
-            bottom: '30px', 
-            right: '0px', 
+            bottom: '24px', 
+            right: '16px', // Separado del borde para que no se corte en la APK
             zIndex: 99999, 
             backgroundColor: '#131b2e', 
-            borderLeft: '2px solid #dc2626',
-            borderTop: '1px solid rgba(220, 38, 38, 0.4)',
-            borderBottom: '1px solid rgba(220, 38, 38, 0.4)',
-            borderTopLeftRadius: '12px',
-            borderBottomLeftRadius: '12px',
-            boxShadow: '-5px 10px 25px rgba(0, 0, 0, 0.6)', 
-            padding: '10px 12px',
+            border: '1px solid rgba(220, 38, 38, 0.5)',
+            borderRadius: '14px',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.7)', 
+            padding: '8px 12px',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease'
+            gap: '8px'
           }}
         >
-          {/* Si está expandido muestra el contenido completo, si está contraído muestra solo la solapa */}
           {expandidoFlotante ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={(e) => e.stopPropagation()}>
-              <span style={{ fontSize: '11px', color: '#d1d5db', fontWeight: '500' }}>💬 ¡Canal Privado!</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '11px', color: '#d1d5db', fontWeight: '500' }}>💬 ¡Canal!</span>
               <a 
                 href="LINK_DE_TU_CANAL_DE_TELEGRAM" 
                 target="_blank" 
@@ -100,19 +93,30 @@ export default function BienvenidaCanal() {
                 Entrar 🚀
               </a>
               <button 
-                onClick={handleMaximizar}
-                style={{ backgroundColor: 'transparent', border: 'none', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '2px' }}
-                title="Ver cartel grande"
+                onClick={() => setExpandidoFlotante(false)}
+                style={{ backgroundColor: '#27272a', border: 'none', color: '#9ca3af', fontSize: '10px', cursor: 'pointer', padding: '4px 6px', borderRadius: '6px' }}
+                title="Minimizar botón"
               >
-                🔄
+                ◀
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '14px' }}>💬</span>
-              <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold', writingMode: 'vertical-rl', textOrientation: 'mixed' }}>Unite</span>
-            </div>
+            <button 
+              onClick={() => setExpandidoFlotante(true)}
+              style={{ backgroundColor: 'transparent', border: 'none', color: '#ef4444', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            >
+              💬 <span>Unite</span> ▶
+            </button>
           )}
+
+          {/* Botón para volver al cartel grande */}
+          <button 
+            onClick={handleMaximizar}
+            style={{ backgroundColor: 'transparent', border: 'none', color: '#9ca3af', fontSize: '12px', cursor: 'pointer', padding: '2px', borderLeft: '1px solid #3f3f46', paddingLeft: '6px' }}
+            title="Ver cartel principal"
+          >
+            🔄
+          </button>
         </div>
       )}
     </>
