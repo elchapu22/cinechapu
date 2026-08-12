@@ -162,7 +162,7 @@ if (busqueda) {
   const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta].slice(0, porPagina);
 
   return (
-    <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
+    <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white overflow-x-hidden w-full max-w-full">
       <AppListener />
       <BienvenidaCanal />
 
