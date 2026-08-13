@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import BotonFavoritoTexto from './BotonFavoritoTexto';
 
 // Cache global en memoria del navegador para no reconsultar a Turso por la misma pelicula
 const cachePeliculas = {};
@@ -60,7 +61,10 @@ export default function PeliculaCard({ item, imagenGenerica }) {
           <img src={fotoActual} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
         </div>
         <div className="p-2.5 flex-1 flex flex-col justify-between">
-          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug capitalize">{limpiarNombre(item.nombre)}</h3>
+          <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug capitalize mb-2">{limpiarNombre(item.nombre)}</h3>
+          
+          {/* Botón de favoritos integrado */}
+          <BotonFavoritoTexto peliculaId={item.id} />
         </div>
       </Link>
 

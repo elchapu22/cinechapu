@@ -191,6 +191,7 @@ if (busqueda) {
               <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
               <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
               <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
+              <Link href="/favoritos" className="hover:text-white transition-colors">❤️ Favoritos</Link>
             </nav>
           </div>
         </header>

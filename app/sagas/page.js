@@ -3,7 +3,6 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-
 const sql = createClient({
   url: process.env.TURSO_DATABASE_URL,
   authToken: process.env.TURSO_AUTH_TOKEN,
@@ -50,6 +49,7 @@ export default async function SagasPage() {
               <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
               <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
               <Link href="/sagas" className="text-white font-bold transition-colors">🔥 Sagas</Link>
+              <Link href="/favoritos" className="hover:text-red-500 transition-colors flex items-center gap-1">Favoritos 🤍</Link>
             </nav>
           </div>
         </header>
@@ -58,7 +58,6 @@ export default async function SagasPage() {
           <h1 className="text-xl font-bold text-red-500 mb-6">Coleccion de Sagas</h1>
 
           {listaSagas.length > 0 ? (
-            // Identico a la grilla de la pagina principal: 6 columnas en lg
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
               {listaSagas.map((saga) => (
                 <Link 

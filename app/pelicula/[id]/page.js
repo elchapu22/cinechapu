@@ -1,6 +1,7 @@
 import { createClient } from '@libsql/client';
 import Link from 'next/link';
 import SwipeWrapper from '../../components/SwipeWrapper';
+import BotonFavoritoTexto from '../../components/BotonFavoritoTexto';
 
 const db = createClient({
   url: "libsql://catalogo-peliculas-chapu.aws-us-east-1.turso.io",
@@ -14,14 +15,12 @@ export default async function DetallePelicula({ params, searchParams }) {
   const resolvedSearch = await searchParams;
   const id = resolvedParams.id;
 
-  // Extraemos los filtros que vienen de la URL (incluyendo saga)
   const busqueda = resolvedSearch?.busqueda || '';
   const letra = resolvedSearch?.letra || '';
   const genero = resolvedSearch?.genero || '';
   const anio = resolvedSearch?.anio || '';
   const sagaFiltro = resolvedSearch?.saga || '';
 
-  // 1. Buscamos la pelicula actual
   const resultado = await db.execute({
     sql: `SELECT * FROM peliculas WHERE id = ?`,
     args: [id]
@@ -40,13 +39,11 @@ export default async function DetallePelicula({ params, searchParams }) {
     );
   }
 
-  // Definimos si estamos navegando dentro de una saga (usando el parametro o el campo de la pelicula)
   const sagaActual = sagaFiltro || pelicula.id_saga;
 
   let anteriorPelicula = null;
   let siguientePelicula = null;
 
-  // 2. Si estamos dentro de una saga, navegamos respetando el orden cronologico por año
   if (sagaActual && sagaActual.trim() !== "") {
     const resSaga = await db.execute({
       sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?))`,
@@ -55,7 +52,6 @@ export default async function DetallePelicula({ params, searchParams }) {
 
     let peliculasSaga = resSaga.rows;
 
-    // Ordenamos igual que en la vista de la saga por el año entre parentesis
     peliculasSaga.sort((a, b) => {
       const matchA = a.nombre ? a.nombre.match(/\((\d{4})\)\s*$/) : null;
       const matchB = b.nombre ? b.nombre.match(/\((\d{4})\)\s*$/) : null;
@@ -64,7 +60,6 @@ export default async function DetallePelicula({ params, searchParams }) {
       return anioA - anioB;
     });
 
-    // Buscamos el indice de la pelicula actual dentro de la saga ordenada
     const indexActual = peliculasSaga.findIndex(p => String(p.id) === String(id));
 
     if (indexActual !== -1) {
@@ -76,7 +71,6 @@ export default async function DetallePelicula({ params, searchParams }) {
       }
     }
   } else {
-    // Mapeo exacto del tag para que coincida con la base de datos
     let tagBusqueda = "";
     if (genero === "Charlie Chaplin") {
       tagBusqueda = "chaplin";
@@ -91,9 +85,7 @@ export default async function DetallePelicula({ params, searchParams }) {
     } else {
       tagBusqueda = genero;
     }
-    
 
-    // 3. Logica normal si no es una saga (filtros habituales o catalogo general)
     let sqlWhere = "";
     let argsBase = [];
 
@@ -138,7 +130,6 @@ export default async function DetallePelicula({ params, searchParams }) {
     }
   }
 
-  // Preparamos los parametros de URL para mantener el filtro de saga o de catalogo
   const queryString = new URLSearchParams({
     ...(busqueda && { busqueda }),
     ...(letra && { letra }),
@@ -222,20 +213,27 @@ export default async function DetallePelicula({ params, searchParams }) {
               </p>
             </div>
 
-            {pelicula.link ? (
-              <a 
-                href={pelicula.link} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="inline-block bg-red-600 hover:bg-red-700 text-white font-medium text-center py-3 px-6 rounded transition-colors"
-              >
-                Ver Pelicula en Telegram
-              </a>
-            ) : (
-              <div className="bg-zinc-800 text-zinc-400 py-3 px-6 rounded text-center text-sm">
-                No hay un enlace de video configurado
+            {/* Contenedor de botones (Guardar + Telegram) */}
+            <div className="flex flex-col gap-3">
+              <div className="w-full">
+                <BotonFavoritoTexto peliculaId={pelicula.id} />
               </div>
-            )}
+
+              {pelicula.link ? (
+                <a 
+                  href={pelicula.link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-full block bg-red-600 hover:bg-red-700 text-white font-medium text-center py-3 px-6 rounded transition-colors"
+                >
+                  Ver Pelicula en Telegram
+                </a>
+              ) : (
+                <div className="bg-zinc-800 text-zinc-400 py-3 px-6 rounded text-center text-sm">
+                  No hay un enlace de video configurado
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

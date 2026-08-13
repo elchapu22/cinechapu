@@ -1,5 +1,6 @@
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
+import PeliculaCard from '../../components/PeliculaCard';
 
 const sql = createClient({
   url: process.env.TURSO_DATABASE_URL,
@@ -20,7 +21,6 @@ export default async function DetalleSagaPage({ params }) {
   let peliculas = resultado.rows;
 
   // ORDENAMIENTO CRONOLOGICO PERFECTO EN JS:
-  // Extrae el año que esta entre parentesis al final del nombre (ej: "(1962)") y las ordena de menor a mayor.
   peliculas.sort((a, b) => {
     const matchA = a.nombre ? a.nombre.match(/\((\d{4})\)\s*$/) : null;
     const matchB = b.nombre ? b.nombre.match(/\((\d{4})\)\s*$/) : null;
@@ -60,18 +60,10 @@ export default async function DetalleSagaPage({ params }) {
           {peliculas.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
               {peliculas.map((pelicula) => (
-                <Link 
+                <PeliculaCard 
                   key={pelicula.id} 
-                  href={`/pelicula/${pelicula.id}?saga=${encodeURIComponent(nombreSaga)}`}
-                  className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
-                >
-                  <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
-                    <img src={pelicula.foto || imagenGenerica} alt={pelicula.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
-                  </div>
-                  <div className="p-2.5 flex-1 flex flex-col justify-between">
-                    <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{pelicula.nombre}</h3>
-                  </div>
-                </Link>
+                  item={JSON.parse(JSON.stringify(pelicula))} 
+               />
               ))}
             </div>
           ) : (

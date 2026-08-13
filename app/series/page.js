@@ -80,6 +80,8 @@ export default async function SeriesPage({ searchParams }) {
               <Link href="/peliculas" className="hover:text-white transition-colors">Películas</Link>
               <Link href="/series" className="text-white hover:text-red-500 transition-colors">Series</Link>
               <Link href="/animacion" className="hover:text-white transition-colors">Animación</Link>
+              <Link href="/sagas" className="hover:text-white transition-colors">Sagas</Link>
+              <Link href="/favoritos" className="hover:text-red-500 transition-colors flex items-center gap-1">Favoritos</Link>
             </nav>
             <form action="/series" method="GET" className="w-full md:w-72">
               <input 

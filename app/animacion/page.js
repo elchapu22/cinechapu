@@ -109,6 +109,8 @@ export default async function AnimacionPage({ searchParams }) {
               <Link href="/peliculas" className="hover:text-white transition-colors">Peliculas</Link>
               <Link href="/series" className="hover:text-white transition-colors">Series</Link>
               <Link href="/animacion" className="text-white hover:text-red-500 transition-colors">Animacion</Link>
+              <Link href="/sagas" className="hover:text-white transition-colors">Sagas</Link>
+              <Link href="/favoritos" className="hover:text-red-500 transition-colors flex items-center gap-1">Favoritos</Link>
             </nav>
             <form action="/animacion" method="GET" className="w-full md:w-72">
               <input 
