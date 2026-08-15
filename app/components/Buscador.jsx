@@ -53,7 +53,7 @@ export default function Buscador({ peliculas }) {
         {peliculasFiltradas.length > 0 ? (
           peliculasFiltradas.map((pelicula) => (
             <Link 
-              href={`/pelicula/${pelicula.id}`}
+              href={`/peliculas/${pelicula.id}`}
               key={pelicula.id} 
               className="group relative bg-zinc-900 rounded-md overflow-hidden shadow-lg transition-transform duration-300 hover:scale-105 hover:z-10 cursor-pointer border border-zinc-800 block"
             >

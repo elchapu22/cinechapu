@@ -48,8 +48,9 @@ export default function PeliculaCard({ item, imagenGenerica }) {
   const fotoActual = infoPelicula?.foto || item.foto || imagenGenerica;
 
   // Construimos la URL manteniendo los filtros actuales de manera segura
+  const idRuta = item.esSaga ? `/sagas/${encodeURIComponent(item.id)}` : `/pelicula/${item.id}`;
   const queryString = searchParams.toString();
-  const urlDetalle = queryString ? `/pelicula/${item.id}?${queryString}` : `/pelicula/${item.id}`;
+  const urlDetalle = queryString ? `${idRuta}?${queryString}` : idRuta;
 
   return (
     <div className="relative group" onMouseEnter={handleMouseEnter}>
