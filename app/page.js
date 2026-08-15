@@ -185,7 +185,7 @@ if (busqueda) {
               </button>
             </form>
 
-            <nav className="flex items-center justify-center gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
+            <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
               <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
               <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
               <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
