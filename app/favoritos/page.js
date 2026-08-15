@@ -66,16 +66,18 @@ export default function FavoritosPage() {
       ) : peliculas.length === 0 ? (
         <p className="text-zinc-400">No tenés películas guardadas en favoritos todavía.</p>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
           {peliculas.map((peli) => (
-            <div key={peli.id} className="bg-zinc-900 p-3 rounded-lg relative group">
-              <Link href={`/pelicula/${peli.id}`}>
+            <div key={peli.id} className="bg-zinc-900 p-3 rounded-lg relative group flex flex-col justify-between">
+              <Link href={`/pelicula/${peli.id}`} className="flex flex-col h-full">
+                <div className="aspect-[2/3] w-full bg-zinc-950 relative overflow-hidden rounded mb-2">
                 <img 
                   src={peli.foto || imagenGenerica} 
                   alt={peli.nombre} 
-                  className="w-full h-64 object-cover rounded mb-2 transition-transform duration-300 group-hover:scale-105" 
+                  className="w-full h-full object-cover rounded transition-transform duration-300 group-hover:scale-105" 
                 />
-                <h2 className="font-semibold text-sm">{peli.nombre}</h2>
+                </div>
+                <h2 className="font-semibold text-sm line-clamp-2">{peli.nombre}</h2>
               </Link>
 
               <button
