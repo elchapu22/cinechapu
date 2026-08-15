@@ -192,6 +192,7 @@ if (busqueda) {
               <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
               <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
               <Link href="/favoritos" className="hover:text-white transition-colors">❤️ Favoritos</Link>
+              <Link href="/actores">🎭Actores</Link>
             </nav>
           </div>
         </header>
