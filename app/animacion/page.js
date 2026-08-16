@@ -101,26 +101,33 @@ export default async function AnimacionPage({ searchParams }) {
   return (
     <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
-        <header className="w-full border-b border-zinc-800/60 bg-[#090d16]/90 backdrop-blur sticky top-0 z-50">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <Link href="/" className="text-xl font-black tracking-widest text-red-600">CineChapu</Link>
-            <nav className="flex items-center gap-6 text-xs md:text-sm text-zinc-400 font-medium">
-              <Link href="/" className="hover:text-white transition-colors">Inicio</Link>
-              <Link href="/peliculas" className="hover:text-white transition-colors">Peliculas</Link>
-              <Link href="/series" className="hover:text-white transition-colors">Series</Link>
-              <Link href="/animacion" className="text-white hover:text-red-500 transition-colors">Animacion</Link>
-              <Link href="/sagas" className="hover:text-white transition-colors">Sagas</Link>
-              <Link href="/favoritos" className="hover:text-red-500 transition-colors flex items-center gap-1">Favoritos</Link>
-            </nav>
-            <form action="/animacion" method="GET" className="w-full md:w-72">
+        <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
+          <div className="max-w-[1400px] mx-auto flex flex-col items-center text-center">
+            <Link href="/" className="text-2xl md:text-3xl font-black tracking-widest text-red-600 mb-2">CineChapu</Link>
+            <p className="text-zinc-400 text-xs md:text-sm mb-6 font-medium">Peliculas, Series & Animes</p>
+            
+            <form action="/" method="GET" className="w-full max-w-2xl relative mb-6">
               <input 
                 type="text" 
                 name="busqueda" 
                 defaultValue={busqueda}
-                placeholder="Buscar animacion..." 
-                className="w-full bg-[#131b2e] border border-zinc-800 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-colors"
+                placeholder="Search..." 
+                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-6 py-3 text-sm text-zinc-200 focus:outline-none focus:border-red-600 transition-colors shadow-2xl pl-6 pr-12"
               />
+              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer">
+                🔍
+              </button>
             </form>
+
+            <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
+              <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
+              <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
+              <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
+              <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
+              <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
+              <Link href="/favoritos" className="hover:text-white transition-colors">❤️ Favoritos</Link>
+              <Link href="/actores">🎭Actores</Link>
+            </nav>
           </div>
         </header>
 
