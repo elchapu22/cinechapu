@@ -7,8 +7,8 @@ export default function BuscadorActores({ actoresUnicos }) {
   const [busqueda, setBusqueda] = useState('');
 
   // Filtramos la lista de actores en tiempo real según lo que escribas
-  const actoresFiltrados = actoresUnicos.filter(actor =>
-    actor.toLowerCase().includes(busqueda.toLowerCase())
+  const actoresFiltrados = actoresUnicos.filter(actor => 
+  actor.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
