@@ -11,11 +11,13 @@ const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91ced
 
 export default async function DetalleSagaPage({ params }) {
   const resolvedParams = await params;
-  const nombreSaga = decodeURIComponent(resolvedParams.slug);
+  const slugCrudo = decodeURIComponent(resolvedParams.slug);
+
+  const nombreSaga = slugCrudo.replace(/-/g, ' ');
 
   const resultado = await sql.execute({
-    sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) LIKE LOWER(TRIM(?))`,
-    args: [`%${nombreSaga}%`]
+    sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?))`,
+    args: [nombreSaga]
   });
 
   let peliculas = resultado.rows;
