@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
 import PeliculaCard from '../../components/PeliculaCard';
+import VolverSagas from '../../components/VolverSagas';
 
 const sql = createClient({
   url: process.env.TURSO_DATABASE_URL,
@@ -53,7 +54,7 @@ export default async function DetalleSagaPage({ params }) {
 
         <section className="max-w-[1400px] mx-auto px-6 py-8">
           <div className="flex items-center gap-4 mb-6">
-            <Link href="/sagas" className="text-xs text-red-400 hover:underline">← Volver a Sagas</Link>
+            <VolverSagas />
           </div>
 
           <h1 className="text-2xl font-extrabold text-white uppercase tracking-wider mb-2">{nombreSaga}</h1>
