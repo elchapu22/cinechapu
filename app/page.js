@@ -4,6 +4,7 @@ import PeliculaCard from './components/PeliculaCard';
 import CarruselEstrenos from './components/CarruselEstrenos';
 import AppListener from './components/AppListener';
 import BienvenidaCanal from './components/BienvenidaCanal';
+import PeliculaCardPro from './components/PeliculaCardPro';
 
 // Configuracion de Turso
 const db = createClient({
@@ -22,9 +23,7 @@ export default async function Home({ searchParams }) {
   const params = await searchParams;
   const paginaActual = Number(params?.page) || 1;
   const busqueda = params?.busqueda || '';
-  const letra = params?.letra || '';
   const genero = params?.genero || '';
-  const anio = params?.anio || '';
   const porPagina = 24;
   const offset = (paginaActual - 1) * porPagina;
 
@@ -53,7 +52,7 @@ export default async function Home({ searchParams }) {
     tagBusqueda = genero;
   }
 
-if (busqueda) {
+  if (busqueda) {
     const resPeli = await db.execute({
       sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
       args: [`%${busqueda.toLowerCase()}%`, offset]
@@ -76,32 +75,6 @@ if (busqueda) {
     const resTotal = await db.execute({
       sql: `SELECT COUNT(*) as count FROM peliculas WHERE tags LIKE ?`,
       args: [`%${tagBusqueda}%`]
-    });
-    totalPeliculas = Number(resTotal.rows[0].count);
-
-  } else if (letra) {
-    const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE LOWER(nombre) LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
-      args: [`${letra.toLowerCase()}%`, offset]
-    });
-    peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
-
-    const resTotal = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) LIKE ?`,
-      args: [`${letra.toLowerCase()}%`]
-    });
-    totalPeliculas = Number(resTotal.rows[0].count);
-
-  } else if (anio) {
-    const resPeli = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE nombre LIKE ? ORDER BY id LIMIT 50 OFFSET ?`,
-      args: [`%(${anio})`, offset]
-    });
-    peliculasPaginadas = JSON.parse(JSON.stringify(resPeli.rows));
-
-    const resTotal = await db.execute({
-      sql: `SELECT COUNT(*) as count FROM peliculas WHERE nombre LIKE ?`,
-      args: [`%(${anio})`]
     });
     totalPeliculas = Number(resTotal.rows[0].count);
 
@@ -128,16 +101,6 @@ if (busqueda) {
 
   const totalPaginas = Math.ceil(totalPeliculas / porPagina) || 1;
 
-  const todosLosNombresRes = await db.execute(`SELECT nombre FROM peliculas`);
-  const todosLosNombres = JSON.parse(JSON.stringify(todosLosNombresRes.rows));
-
-  const anosDisponibles = [...new Set(
-    todosLosNombres.map(p => {
-      const match = p.nombre ? p.nombre.match(/\((\d{4})\)$/) : null;
-      return match ? match[1] : null;
-    }).filter(Boolean)
-  )].sort((a, b) => b - a);
-
   const peliculasSuelta = [];
   const sagasAgrupadas = {};
 
@@ -162,39 +125,71 @@ if (busqueda) {
   const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta].slice(0, porPagina);
 
   return (
-    <main className="min-h-screen bg-[#070b14] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white overflow-x-hidden w-full max-w-full">
+    <main className="min-h-screen bg-[#050507] text-white flex flex-col justify-between ...">
       <AppListener />
       <BienvenidaCanal />
 
       <div>
-        <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
-          <div className="max-w-[1400px] mx-auto flex flex-col items-center text-center">
-            <Link href="/" className="text-2xl md:text-3xl font-black tracking-widest text-red-600 mb-2">CineChapu</Link>
-            <p className="text-zinc-400 text-xs md:text-sm mb-6 font-medium">Peliculas, Series & Animes</p>
+        <header className="w-full bg-[#030305]/90 border-b border-zinc-800/60 py-3.5 px-6 sticky top-0 z-50 backdrop-blur-xl">
+          <div className="max-w-[1500px] mx-auto flex items-center justify-between gap-4">
             
-            <form action="/" method="GET" className="w-full max-w-2xl relative mb-6">
+            {/* Logo y Eslogan Minimalista */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href="/" className="text-xl md:text-2xl font-black tracking-wider text-red-600 flex items-center gap-1.5">
+                <span className="bg-red-600 text-white p-1 rounded-md text-xs">🎬</span> CineChapu
+              </Link>
+            </div>
+
+            {/* Menú de Navegación con Estilo Moderno y Nuevos Íconos */}
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2 bg-[#111827]/70 border border-zinc-800/80 px-3 py-1.5 rounded-full shadow-inner">
+              <Link href="/" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🏠</span> Inicio
+              </Link>
+              <Link href="/peliculas" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🍿</span> Películas
+              </Link>
+              <Link href="/series" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>📺</span> Series
+              </Link>
+              <Link href="/animacion" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>⚡</span> Animación
+              </Link>
+              <Link href="/sagas" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🔮</span> Sagas
+              </Link>
+              <Link href="/favoritos" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>💖</span> Favoritos
+              </Link>
+              <Link href="/actores" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🎭</span> Actores
+              </Link>
+            </nav>
+
+            {/* Buscador Estilizado */}
+            <form action="/" method="GET" className="relative w-44 sm:w-60 shrink-0">
               <input 
                 type="text" 
                 name="busqueda" 
                 defaultValue={busqueda}
-                placeholder="Search..." 
-                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-6 py-3 text-sm text-zinc-200 focus:outline-none focus:border-red-600 transition-colors shadow-2xl pl-6 pr-12"
+                placeholder="Buscar títulos..." 
+                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-all shadow-sm pr-9 placeholder:text-zinc-500"
               />
-              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer">
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer text-xs">
                 🔍
               </button>
             </form>
-
-            <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
-              <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
-              <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
-              <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
-              <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
-              <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
-              <Link href="/favoritos" className="hover:text-white transition-colors">❤️ Favoritos</Link>
-              <Link href="/actores">🎭 Actores</Link>
-            </nav>
           </div>
+
+          {/* Menú inferior deslizable para pantallas medianas o celulares */}
+          <nav className="flex lg:hidden items-center justify-start sm:justify-center gap-2 text-xs text-zinc-300 font-medium mt-3 pt-2.5 border-t border-zinc-800/50 overflow-x-auto pb-1 scrollbar-none">
+            <Link href="/" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🏠 Inicio</Link>
+            <Link href="/peliculas" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🍿 Películas</Link>
+            <Link href="/series" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">📺 Series</Link>
+            <Link href="/animacion" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">⚡ Animación</Link>
+            <Link href="/sagas" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🔮 Sagas</Link>
+            <Link href="/favoritos" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">💖 Favoritos</Link>
+            <Link href="/actores" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🎭 Actores</Link>
+          </nav>
         </header>
 
         <section className="max-w-[1400px] mx-auto px-6 py-8">
@@ -212,17 +207,15 @@ if (busqueda) {
         </section>
 
         <section className="max-w-[1400px] mx-auto px-6 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-3">
+          <div>
+            <div>
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
                 <div className="text-zinc-400">
                   {busqueda && <span className="mr-2 text-red-500 font-semibold">Buscando: "{busqueda}"</span>}
-                  {letra && <span className="mr-2 text-red-500 font-semibold">Letra: {letra.toUpperCase()}</span>}
                   {genero && <span className="mr-2 text-red-500 font-semibold">Coleccion: {genero}</span>}
-                  {anio && <span className="mr-2 text-red-500 font-semibold">Año: {anio}</span>}
                   Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> de <span className="text-white font-bold">{totalPeliculas}</span>
                 </div>
-                {(busqueda || letra || genero || anio) && (
+                {(busqueda || genero) && (
                   <Link href="/" className="text-xs text-red-400 hover:underline">
                     Limpiar filtros ✕
                   </Link>
@@ -230,7 +223,7 @@ if (busqueda) {
               </div>
 
               {elementosMostrar.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8 gap-3 sm:gap-4">
                   {elementosMostrar.map((item) => (
                     item.esSaga ? (
                       <Link 
@@ -249,9 +242,9 @@ if (busqueda) {
                         </div>
                       </Link>
                     ) : (
-                      <PeliculaCard 
-                        key={`peli-${item.id}`} 
-                        item={item} 
+                      <PeliculaCardPro
+                        key={`peli-${item.id}`}
+                        pelicula={item} 
                         imagenGenerica={imagenGenerica} 
                       />
                     )
@@ -266,7 +259,7 @@ if (busqueda) {
               <div className="flex items-center justify-center gap-4 mt-8 py-4">
                 {paginaActual > 1 ? (
                   <Link 
-                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(letra && { letra }), ...(genero && { genero }), ...(anio && { anio }), page: paginaActual - 1 })}`}
+                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(genero && { genero }), page: paginaActual - 1 })}`}
                     className="px-4 py-2 bg-[#131b2e] border border-zinc-800 rounded-lg text-xs text-zinc-300 hover:bg-zinc-800 transition-colors"
                   >
                     ← Anterior
@@ -283,7 +276,7 @@ if (busqueda) {
 
                 {paginaActual < totalPaginas ? (
                   <Link 
-                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(letra && { letra }), ...(genero && { genero }), ...(anio && { anio }), page: paginaActual + 1 })}`}
+                    href={`/?${new URLSearchParams({ ...(busqueda && { busqueda }), ...(genero && { genero }), page: paginaActual + 1 })}`}
                     className="px-4 py-2 bg-[#131b2e] border border-zinc-800 rounded-lg text-xs text-zinc-300 hover:bg-zinc-800 transition-colors"
                   >
                     Siguiente →
@@ -295,62 +288,11 @@ if (busqueda) {
                 )}
               </div>
             </div>
-
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-[#131b2e]/40 border border-zinc-800/80 rounded-xl p-4 shadow-xl">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Colecciones Populares</h3>
-                <div className="flex flex-wrap gap-2">
-                  {["Cantinflas", "Pedro Infante", "Charlie Chaplin", "Elvis Presley", "Mundial 2026"].map((coleccion) => (
-                    <Link
-                      key={coleccion}
-                      href={`/?genero=${coleccion}`}
-                      className="bg-[#1a2540] hover:bg-red-600 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-zinc-700/50"
-                    >
-                      {coleccion}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-[#131b2e]/40 border border-zinc-800/80 rounded-xl p-4 shadow-xl">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Filtrar por Año</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {anosDisponibles.map((a) => (
-                    <Link
-                      key={a}
-                      href={`/?anio=${a}`}
-                      className={`px-2.5 py-1 rounded text-xs font-bold transition-colors border ${
-                        anio === a 
-                          ? 'bg-red-600 text-white border-red-500' 
-                          : 'bg-[#1a2540] hover:bg-red-600 text-zinc-300 hover:text-white border-zinc-700/50'
-                      }`}
-                    >
-                      {a}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-
-              <div className="bg-[#131b2e]/40 border border-zinc-800/80 rounded-xl p-4 shadow-xl">
-                <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-wider mb-3">Filtrar por Letra</h3>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("").map((l) => (
-                    <Link
-                      key={l}
-                      href={`/?letra=${l}`}
-                      className="h-8 flex items-center justify-center bg-[#1a2540] hover:bg-red-600 text-zinc-300 hover:text-white rounded text-xs font-bold transition-colors border border-zinc-700/50"
-                    >
-                      {l}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
           </div>
         </section>
       </div>
 
-      <footer className="w-full border-t border-zinc-800/40 bg-[#070b14] py-6 text-center text-xs text-zinc-500">
+      <footer className="w-full border-t border-zinc-900/60 bg-[#030305] py-6 text-center text-xs text-zinc-500">
         <p>CineChapu — Todos los derechos reservados</p>
       </footer>
     </main>

@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
 export const dynamic = 'force-dynamic';
+import PeliculaCardPro from '../components/PeliculaCardPro';
 
 const sql = createClient({
   url: process.env.TURSO_DATABASE_URL,
@@ -24,12 +25,11 @@ export default async function AnimacionPage({ searchParams }) {
   let contenidoPaginado = [];
   let totalContenido = 0;
 
-  const filtroTags = `(LOWER(TRIM(tags)) = 'animacion' OR LOWER(TRIM(tags)) LIKE '%animacion%')`;
-
+  // Consulta adaptada con LIMIT y OFFSET reales para que funcione la paginación
   if (busqueda) {
     const resultado = await sql.execute({
       sql: `SELECT * FROM peliculas 
-            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animacion%')
+            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%')
             AND LOWER(nombre) LIKE ? 
             ORDER BY id LIMIT ? OFFSET ?`,
       args: [`%${busqueda.toLowerCase()}%`, porPagina, offset]
@@ -38,20 +38,19 @@ export default async function AnimacionPage({ searchParams }) {
 
     const totalResultado = await sql.execute({
       sql: `SELECT COUNT(*) as count FROM peliculas 
-            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%' OR LOWER(tags) LIKE '%animacion%')
+            WHERE (LOWER(tags) LIKE '%infantil%' OR LOWER(tags) LIKE '%anime%' OR LOWER(tags) LIKE '%animacion%')
             AND LOWER(nombre) LIKE ?`,
       args: [`%${busqueda.toLowerCase()}%`]
     });
     totalContenido = Number(totalResultado.rows[0].count);
-} else {
+  } else {
     const resultado = await sql.execute({
       sql: `SELECT * FROM peliculas 
             WHERE LOWER(tags) LIKE '%infantil%' 
                OR LOWER(tags) LIKE '%anime%' 
                OR LOWER(tags) LIKE '%animacion%' 
-               OR LOWER(tags) LIKE '%animacion%' 
-            ORDER BY id LIMIT 200`,
-      args: []
+            ORDER BY id LIMIT ? OFFSET ?`,
+      args: [porPagina, offset]
     });
     contenidoPaginado = resultado.rows;
 
@@ -59,7 +58,6 @@ export default async function AnimacionPage({ searchParams }) {
       sql: `SELECT COUNT(*) as count FROM peliculas 
             WHERE LOWER(tags) LIKE '%infantil%' 
                OR LOWER(tags) LIKE '%anime%' 
-               OR LOWER(tags) LIKE '%animacion%' 
                OR LOWER(tags) LIKE '%animacion%'`
     });
     totalContenido = Number(totalResultado.rows[0].count);
@@ -67,115 +65,149 @@ export default async function AnimacionPage({ searchParams }) {
 
   const totalPaginas = Math.ceil(totalContenido / porPagina) || 1;
 
-  // --- 🔥 MAGIA PARA AGRUPAR LAS SAGAS AQUI 🔥 ---
+  // --- LÓGICA DE AGRUPAMIENTO DE SAGAS ---
   const peliculasSuelta = [];
   const sagasAgrupadas = {};
 
   contenidoPaginado.forEach((item) => {
-    // Si tiene id_saga (asumiendo que asi se llama tu columna en Turso)
     if (item.id_saga) {
       if (!sagasAgrupadas[item.id_saga]) {
-        // Creamos la "Super Tarjeta" para la saga
         sagasAgrupadas[item.id_saga] = {
-          esSaga: true, // Etiqueta para saber que es un grupo
+          esSaga: true,
           id: item.id_saga,
-          // Si tenes el nombre de la saga en la BD ponelo aca. Sino, intentamos deducirlo del nombre:
           nombre: `Coleccion ${limpiarNombre(item.nombre).split(' y ')[0].split(' el ')[0].split(' en ')[0]}`,
-          foto: item.foto, // Usamos la foto de la primera peli
-          cantidad: 1 // Contador de cuantas pelis encontro de esta saga
+          foto: item.foto,
+          cantidad: 1
         };
       } else {
-        // Si ya existe la saga, solo sumamos al contador
         sagasAgrupadas[item.id_saga].cantidad += 1;
       }
     } else {
-      // Si no tiene saga, va a las sueltas
       peliculasSuelta.push({ ...item, esSaga: false });
     }
   });
 
-  // Juntamos todo en un solo array final para dibujar en pantalla
   const elementosMostrar = [...Object.values(sagasAgrupadas), ...peliculasSuelta];
-  // ------------------------------------------------
 
   return (
-    <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
+    <main className="min-h-screen bg-[#030305] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
-        <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
-          <div className="max-w-[1400px] mx-auto flex flex-col items-center text-center">
-            <Link href="/" className="text-2xl md:text-3xl font-black tracking-widest text-red-600 mb-2">CineChapu</Link>
-            <p className="text-zinc-400 text-xs md:text-sm mb-6 font-medium">Peliculas, Series & Animes</p>
+        {/* Header Estilo Streaming Pro con Navegación Horizontal y Fondo Negro Profundo */}
+        <header className="w-full bg-[#030305]/90 border-b border-zinc-900/80 py-3.5 px-6 sticky top-0 z-50 backdrop-blur-xl">
+          <div className="max-w-[1500px] mx-auto flex items-center justify-between gap-4">
             
-            <form action="/" method="GET" className="w-full max-w-2xl relative mb-6">
+            {/* Logo y Eslogan Minimalista */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href="/" className="text-xl md:text-2xl font-black tracking-wider text-red-600 flex items-center gap-1.5">
+                <span className="bg-red-600 text-white p-1 rounded-md text-xs">🎬</span> CineChapu
+              </Link>
+            </div>
+
+            {/* Menú de Navegación en Cápsula */}
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2 bg-[#111827]/70 border border-zinc-800/80 px-3 py-1.5 rounded-full shadow-inner">
+              <Link href="/" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🏠</span> Inicio
+              </Link>
+              <Link href="/peliculas" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🍿</span> Películas
+              </Link>
+              <Link href="/series" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>📺</span> Series
+              </Link>
+              <Link href="/animacion" className="px-3 py-1 rounded-full text-xs font-medium text-white bg-zinc-800/95 transition-all flex items-center gap-1.5">
+                <span>⚡</span> Animación
+              </Link>
+              <Link href="/sagas" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🔮</span> Sagas
+              </Link>
+              <Link href="/favoritos" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>💖</span> Favoritos
+              </Link>
+              <Link href="/actores" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🎭</span> Actores
+              </Link>
+            </nav>
+
+            {/* Buscador Estilizado */}
+            <form action="/animacion" method="GET" className="relative w-44 sm:w-60 shrink-0">
               <input 
                 type="text" 
                 name="busqueda" 
                 defaultValue={busqueda}
-                placeholder="Search..." 
-                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-6 py-3 text-sm text-zinc-200 focus:outline-none focus:border-red-600 transition-colors shadow-2xl pl-6 pr-12"
+                placeholder="Buscar animación..." 
+                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-all shadow-sm pr-9 placeholder:text-zinc-500"
               />
-              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer">
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer text-xs">
                 🔍
               </button>
             </form>
-
-            <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
-              <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
-              <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
-              <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
-              <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
-              <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
-              <Link href="/favoritos" className="hover:text-white transition-colors">❤️ Favoritos</Link>
-              <Link href="/actores">🎭Actores</Link>
-            </nav>
           </div>
+
+          {/* Menú inferior deslizable para pantallas medianas o celulares */}
+          <nav className="flex lg:hidden items-center justify-start sm:justify-center gap-2 text-xs text-zinc-300 font-medium mt-3 pt-2.5 border-t border-zinc-800/50 overflow-x-auto pb-1 scrollbar-none">
+            <Link href="/" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🏠 Inicio</Link>
+            <Link href="/peliculas" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🍿 Películas</Link>
+            <Link href="/series" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">📺 Series</Link>
+            <Link href="/animacion" className="px-2.5 py-1 bg-red-600 text-white rounded-md whitespace-nowrap">⚡ Animación</Link>
+            <Link href="/sagas" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🔮 Sagas</Link>
+            <Link href="/favoritos" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">💖 Favoritos</Link>
+            <Link href="/actores" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🎭 Actores</Link>
+          </nav>
         </header>
 
-        <section className="max-w-[1400px] mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
-            <div className="text-zinc-400">
-              <span className="text-red-500 font-semibold mr-2">Catalogo de Animacion e Infantil</span>
-              Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> resultados agrupados
+        <section className="max-w-[1500px] mx-auto px-6 py-8">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between bg-[#111827]/50 border border-zinc-800/80 rounded-xl p-4 backdrop-blur shadow-lg">
+              <div className="text-xs text-zinc-400">
+                <span className="text-red-500 font-semibold mr-2">Catálogo de Animación e Infantil</span>
+                Mostrando <span className="text-white font-bold">{elementosMostrar.length}</span> de <span className="text-white font-bold">{totalContenido}</span> resultados
+              </div>
+              {busqueda && (
+                <Link href="/animacion" className="text-xs text-red-400 hover:underline">Limpiar filtro ✕</Link>
+              )}
             </div>
+
+            {elementosMostrar.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                {elementosMostrar.map((item) => (
+                  <PeliculaCardPro
+                    key={item.esSaga ? `saga-${item.id}` : `peli-${item.id}`}
+                    pelicula={{
+                      ...item,
+                      nombre: item.esSaga ? item.nombre : limpiarNombre(item.nombre)
+                    }}
+                    esSaga={item.esSaga}
+                    cantidadSaga={item.cantidad}
+                    imagenGenerica={imagenGenerica}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 text-zinc-500 bg-[#111827]/30 rounded-lg border border-zinc-800/40">
+                No se encontraron contenidos de animación.
+              </div>
+            )}
+
+            {/* Controles de Paginación */}
+            <div className="flex justify-center items-center gap-3 mt-12 mb-8">
+              {paginaActual > 1 ? (
+                <Link href={`/animacion?page=${paginaActual - 1}${busqueda ? `&busqueda=${busqueda}` : ''}`} className="bg-[#111827] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-4 py-1.5 rounded text-xs font-medium">← Anterior</Link>
+              ) : (
+                <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">← Anterior</span>
+              )}
+              <span className="text-xs text-zinc-400">Página <strong className="text-white">{paginaActual}</strong> de {totalPaginas}</span>
+              {paginaActual < totalPaginas ? (
+                <Link href={`/animacion?page=${paginaActual + 1}${busqueda ? `&busqueda=${busqueda}` : ''}`} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-xs font-medium">Siguiente →</Link>
+              ) : (
+                <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">Siguiente →</span>
+              )}
+            </div>
+
           </div>
-
-          {elementosMostrar.length > 0 ? (
-            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-              {elementosMostrar.map((item) => (
-                <Link 
-                  key={item.esSaga ? `saga-${item.id}` : `peli-${item.id}`} 
-                  // 👇 Aca mandamos a la ruta de SAGA o de PELICULA dependiendo que sea
-                  href={item.esSaga ? `/sagas/${item.id}` : `/pelicula/${item.id}`}
-                  className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group relative"
-                >
-                  <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
-                    <img src={item.foto || imagenGenerica} alt={item.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
-                    
-                    {/* 👇 Etiqueta visual si es una saga agrupada */}
-                    {item.esSaga && (
-                      <div className="absolute top-2 right-2 bg-red-600 text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-md z-10 border border-red-800">
-                        SAGA ({item.cantidad})
-                      </div>
-                    )}
-
-                  </div>
-                  <div className="p-2.5 flex-1 flex flex-col justify-between">
-                    <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">
-                      {item.esSaga ? item.nombre : limpiarNombre(item.nombre)}
-                    </h3>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-20 text-zinc-500 bg-[#131b2e]/30 rounded-lg border border-zinc-800/40">
-              No se encontraron contenidos de animacion.
-            </div>
-          )}
         </section>
       </div>
 
-      <footer className="w-full border-t border-zinc-800/40 bg-[#090d16] py-6 text-center text-xs text-zinc-500">
+      <footer className="w-full border-t border-zinc-900/60 bg-[#030305] py-6 text-center text-xs text-zinc-500">
         <p>CineChapu — Todos los derechos reservados</p>
       </footer>
     </main>

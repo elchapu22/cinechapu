@@ -1,242 +1,156 @@
-import { createClient } from '@libsql/client';
+import { createClient } from "@libsql/client";
 import Link from 'next/link';
-import SwipeWrapper from '../../components/SwipeWrapper';
-import BotonFavoritoTexto from '../../components/BotonFavoritoTexto';
 
-const db = createClient({
-  url: "libsql://catalogo-peliculas-chapu.aws-us-east-1.turso.io",
-  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODUzOTQxNDUsImlkIjoiMDE5ZmIxYzUtMzYwMS03YmM0LTk4ZGYtNWYzNDg4Y2FhZWRjIiwia2lkIjoiOVBRb1FvLUMtdzh5bWFQeWt5dlI3WnBWUXY1ck10M3I4VVdkUHJuakRMUSIsInJpZCI6IjU4ZmJkMDljLWNlMmUtNGJjZS04YjU1LTdkNDUyOTgzYWIxMyJ9.Q80179N0HQxJCmS1H6gsng_iRYPOEx4hXZC6YTZ5uvBhynpgd9Q9wpx90hPB1hZxVnB_MW6vnareXzdZXfU1Dg"
+const sql = createClient({
+  url: process.env.TURSO_DATABASE_URL,
+  authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
-const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
+export default async function DetallePeliculaPage({ params }) {
+  const { id } = await params;
 
-export default async function DetallePelicula({ params, searchParams }) {
-  const resolvedParams = await params;
-  const resolvedSearch = await searchParams;
-  const id = resolvedParams.id;
-
-  const busqueda = resolvedSearch?.busqueda || '';
-  const letra = resolvedSearch?.letra || '';
-  const genero = resolvedSearch?.genero || '';
-  const anio = resolvedSearch?.anio || '';
-  const sagaFiltro = resolvedSearch?.saga || '';
-
-  const resultado = await db.execute({
-    sql: `SELECT * FROM peliculas WHERE id = ?`,
+  // 1. Traemos la película de la base de datos
+  const resultadoPelicula = await sql.execute({
+    sql: "SELECT * FROM peliculas WHERE id = ?",
     args: [id]
   });
   
-  const pelicula = resultado.rows[0];
+  const pelicula = resultadoPelicula.rows[0];
 
   if (!pelicula) {
     return (
-      <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-text">
-        <h1 className="text-2xl font-bold mb-4">Pelicula no encontrada</h1>
-        <Link href="/" className="bg-red-600 px-4 py-2 rounded text-white font-medium hover:bg-red-700">
-          Volver al catalogo
-        </Link>
-      </main>
+      <div className="min-h-screen bg-[#090d16] text-white flex items-center justify-center">
+        <p>Película no encontrada</p>
+      </div>
     );
   }
 
-  const sagaActual = sagaFiltro || pelicula.id_saga;
+  // 2. Video de fondo
+  const videoIdFondo = pelicula.video_fondo || pelicula.trailer || "dQw4w9WgXcQ"; 
 
-  let anteriorPelicula = null;
-  let siguientePelicula = null;
-
-  if (sagaActual && sagaActual.trim() !== "") {
-    const resSaga = await db.execute({
-      sql: `SELECT * FROM peliculas WHERE LOWER(TRIM(id_saga)) = LOWER(TRIM(?))`,
-      args: [sagaActual.trim()]
+  // 3. Traemos el reparto real incluyendo el id del actor
+  let reparto = [];
+  try {
+    const resultadoReparto = await sql.execute({
+      sql: `
+        SELECT a.id, a.nombre, a.foto_url, pa.personaje 
+        FROM pelicula_actores pa
+        JOIN actores a ON pa.id_actor = a.id
+        WHERE pa.id_pelicula = ?
+      `,
+      args: [id]
     });
-
-    let peliculasSaga = resSaga.rows;
-
-    peliculasSaga.sort((a, b) => {
-      const matchA = a.nombre ? a.nombre.match(/\((\d{4})\)\s*$/) : null;
-      const matchB = b.nombre ? b.nombre.match(/\((\d{4})\)\s*$/) : null;
-      const anioA = matchA ? parseInt(matchA[1], 10) : 0;
-      const anioB = matchB ? parseInt(matchB[1], 10) : 0;
-      return anioA - anioB;
-    });
-
-    const indexActual = peliculasSaga.findIndex(p => String(p.id) === String(id));
-
-    if (indexActual !== -1) {
-      if (indexActual > 0) {
-        anteriorPelicula = peliculasSaga[indexActual - 1];
-      }
-      if (indexActual < peliculasSaga.length - 1) {
-        siguientePelicula = peliculasSaga[indexActual + 1];
-      }
-    }
-  } else {
-    let tagBusqueda = "";
-    if (genero === "Charlie Chaplin") {
-      tagBusqueda = "chaplin";
-    } else if (genero === "Cantinflas") {
-      tagBusqueda = "cantinflas";
-    } else if (genero === "Pedro Infante") {
-      tagBusqueda = "pedro-infante";
-    } else if (genero === "Elvis Presley") {
-      tagBusqueda = "elvis";
-    } else if (genero === "Mundial 2026") {
-      tagBusqueda = "mundial-2026";
-    } else {
-      tagBusqueda = genero;
-    }
-
-    let sqlWhere = "";
-    let argsBase = [];
-
-    if (busqueda) {
-      sqlWhere = "LOWER(nombre) LIKE ?";
-      argsBase = [`%${busqueda.toLowerCase()}%`];
-    } else if (genero) {
-      sqlWhere = "tags LIKE ?";
-      argsBase = [`%${tagBusqueda}%`];
-    } else if (letra) {
-      sqlWhere = "LOWER(nombre) LIKE ?";
-      argsBase = [`${letra.toLowerCase()}%`];
-    } else if (anio) {
-      sqlWhere = "nombre LIKE ?";
-      argsBase = [`%(${anio})`];
-    }
-
-    if (sqlWhere) {
-      const resAnt = await db.execute({
-        sql: `SELECT id FROM peliculas WHERE id < ? AND (${sqlWhere}) ORDER BY id DESC LIMIT 1`,
-        args: [id, ...argsBase]
-      });
-      anteriorPelicula = resAnt.rows[0];
-
-      const resSig = await db.execute({
-        sql: `SELECT id FROM peliculas WHERE id > ? AND (${sqlWhere}) ORDER BY id ASC LIMIT 1`,
-        args: [id, ...argsBase]
-      });
-      siguientePelicula = resSig.rows[0];
-    } else {
-      const resAnt = await db.execute({
-        sql: `SELECT id FROM peliculas WHERE id < ? ORDER BY id DESC LIMIT 1`,
-        args: [id]
-      });
-      anteriorPelicula = resAnt.rows[0];
-
-      const resSig = await db.execute({
-        sql: `SELECT id FROM peliculas WHERE id > ? ORDER BY id ASC LIMIT 1`,
-        args: [id]
-      });
-      siguientePelicula = resSig.rows[0];
-    }
+    reparto = resultadoReparto.rows;
+  } catch (error) {
+    console.log("Error al traer actores:", error);
   }
 
-  const queryString = new URLSearchParams({
-    ...(busqueda && { busqueda }),
-    ...(letra && { letra }),
-    ...(genero && { genero }),
-    ...(anio && { anio }),
-    ...(sagaActual && { saga: sagaActual }),
-  }).toString();
-
-  const urlVolver = sagaActual ? `/sagas/${encodeURIComponent(sagaActual)}` : (queryString ? `/?${queryString}` : '/');
-  const urlAnterior = anteriorPelicula ? `/pelicula/${anteriorPelicula.id}?${queryString}` : null;
-  const urlSiguiente = siguientePelicula ? `/pelicula/${siguientePelicula.id}?${queryString}` : null;
+  // Respaldo por si no hay actores cargados
+  if (reparto.length === 0) {
+    reparto = [
+      { id: 1, nombre: "Actor de prueba", personaje: "Personaje 1", foto_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200" }
+    ];
+  }
 
   return (
-    <SwipeWrapper anteriorId={anteriorPelicula?.id} siguienteId={siguientePelicula?.id}>
-      <main className="min-h-screen bg-[#141414] text-white p-6 md:p-12 select-text">
-        <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center text-sm">
-          <Link href={urlVolver} className="text-zinc-400 hover:text-white transition-colors">
-            {sagaActual ? `← Volver a la saga` : `← Volver al catalogo`}
-          </Link>
-
-          <div className="flex items-center gap-2">
-            {urlAnterior && (
-              <Link 
-                href={urlAnterior} 
-                className="text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-3.5 py-1.5 rounded-lg transition-all shadow"
-              >
-                ← Anterior
-              </Link>
-            )}
-
-            {urlSiguiente && (
-              <Link 
-                href={urlSiguiente} 
-                className="text-zinc-300 hover:text-white bg-zinc-900 border border-zinc-800 hover:border-zinc-700 px-3.5 py-1.5 rounded-lg transition-all shadow"
-              >
-                Siguiente →
-              </Link>
-            )}
-          </div>
+    <main className="min-h-screen bg-[#090d16] text-white selection:bg-red-600 selection:text-white pb-20">
+      
+      {/* 🌟 HERO CON VIDEO DE FONDO DE YOUTUBE */}
+      <div className="relative w-full h-[75vh] min-h-[550px] flex items-end pb-12 px-6 lg:px-16 overflow-hidden">
+        
+        {/* Contenedor del video de YouTube en bucle de fondo */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-50">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${videoIdFondo}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoIdFondo}&disablekb=1&modestbranding=1`}
+            title="Background video"
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300%] h-[300%] md:w-[150%] md:h-[150%] object-cover"
+            allow="autoplay"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#090d16] via-[#090d16]/50 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#090d16] via-transparent to-[#090d16]/80" />
         </div>
 
-        <div className="max-w-4xl mx-auto bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden shadow-xl grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
-          <div className="aspect-[2/3] bg-zinc-800 rounded overflow-hidden relative pointer-events-none">
-            <img 
-              src={pelicula.foto || imagenGenerica} 
-              alt={pelicula.nombre} 
-              className="object-cover w-full h-full"
-            />
+        {/* Información y botones principales */}
+        <div className="relative z-10 max-w-4xl flex flex-col items-start gap-4">
+          
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white drop-shadow-lg">
+            {pelicula.nombre}
+          </h1>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-zinc-300 font-medium">
+            <span className="text-red-500 font-bold border border-red-500/30 px-2 py-0.5 rounded bg-red-950/30">HD</span>
+            <span>{pelicula.genero || 'Película'}</span>
+            <span>•</span>
+            <span>{pelicula.anio || pelicula.ano || '2026'}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1 text-amber-400 font-bold">
+              ★ {pelicula.calificacion || '7.0'}
+            </span>
           </div>
 
-          <div className="md:col-span-2 flex flex-col justify-between">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2 capitalize">{pelicula.nombre}</h1>
-              
-              <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-400 mb-3">
-                {pelicula.anio && pelicula.anio !== "NULL" && (
-                  <span className="bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700 text-zinc-300">
-                    {pelicula.anio}
-                  </span>
-                )}
-                {pelicula.calificacion && pelicula.calificacion !== "NULL" && (
-                  <span className="text-yellow-400 font-semibold flex items-center gap-1">
-                    ⭐ {pelicula.calificacion} / 10
-                  </span>
-                )}
-                {pelicula.director && pelicula.director !== "NULL" && (
-                  <span className="text-zinc-400">
-                    Director: <strong className="text-zinc-200">{pelicula.director}</strong>
-                  </span>
-                )}
-              </div>
+          <p className="text-zinc-300 text-sm md:text-base leading-relaxed line-clamp-3 max-w-2xl">
+            {pelicula.resumen || pelicula.sinopsis || 'Sin descripción disponible para esta película en este momento.'}
+          </p>
 
-              {pelicula.actores && pelicula.actores !== "NULL" && (
-                <div className="text-xs text-zinc-400 mb-4">
-                  Elenco principal: <strong className="text-zinc-300">{pelicula.actores}</strong>
-                </div>
-              )}
+          <div className="flex items-center gap-4 mt-2">
+            <a 
+              href={pelicula.link || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2 transition-colors shadow-lg shadow-red-600/30 cursor-pointer text-sm md:text-base"
+            >
+              ▶ Ver en Telegram
+            </a>
 
-              <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
-                {pelicula.resumen && pelicula.resumen !== "NULL" ? pelicula.resumen : "Pelicula alojada en canal privado de Telegram."}
-              </p>
-            </div>
+            {/* 🔙 Botón Volver agregado */}
+            <Link 
+              href="/"
+              className="bg-zinc-800/80 hover:bg-zinc-700 text-white font-bold px-5 py-3 rounded-lg flex items-center gap-2 transition-colors border border-zinc-700 cursor-pointer text-sm md:text-base"
+            >
+              ← Volver
+            </Link>
+            
+            <button className="bg-zinc-800/80 hover:bg-zinc-700 text-white font-bold w-11 h-11 rounded-lg flex items-center justify-center transition-colors border border-zinc-700 cursor-pointer" title="Agregar a favoritos">
+              +
+            </button>
 
-            {/* Contenedor de botones (Guardar + Telegram) */}
-            <div className="flex flex-col gap-3">
-              <div className="w-full">
-                <BotonFavoritoTexto peliculaId={pelicula.id} />
-              </div>
-
-              {pelicula.link ? (
-                <a 
-                  href={pelicula.link} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="w-full block bg-red-600 hover:bg-red-700 text-white font-medium text-center py-3 px-6 rounded transition-colors"
-                >
-                  Ver Pelicula en Telegram
-                </a>
-              ) : (
-                <div className="bg-zinc-800 text-zinc-400 py-3 px-6 rounded text-center text-sm">
-                  No hay un enlace de video configurado
-                </div>
-              )}
-            </div>
+            <button className="bg-zinc-800/80 hover:bg-zinc-700 text-white font-medium px-4 py-3 rounded-lg flex items-center gap-2 transition-colors border border-zinc-700 text-sm cursor-pointer">
+              👥 Similares
+            </button>
           </div>
+
         </div>
-      </main>
-    </SwipeWrapper>
+      </div>
+
+      {/* 🌟 SECCIÓN DE REPARTO (CAST) */}
+      <section className="max-w-[1400px] mx-auto px-6 lg:px-16 mt-12">
+        <h2 className="text-xl font-bold text-white mb-6 border-l-4 border-red-600 pl-3">
+          Reparto
+        </h2>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          {reparto.map((actor, index) => (
+            <Link 
+              key={index} 
+              href={`/actores/${actor.id}`}
+              className="bg-[#131b2e]/60 border border-zinc-800/80 rounded-xl p-3 flex items-center gap-3 backdrop-blur shadow hover:border-red-500/50 transition-colors group cursor-pointer"
+            >
+              <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-zinc-800">
+                <img 
+                  src={actor.foto_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200"} 
+                  alt={actor.nombre} 
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform"
+                />
+              </div>
+              <div className="overflow-hidden">
+                <h4 className="text-xs font-bold text-white truncate group-hover:text-red-500 transition-colors">{actor.nombre}</h4>
+                <p className="text-[10px] text-zinc-400 truncate">{actor.personaje || 'Actor'}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+    </main>
   );
 }

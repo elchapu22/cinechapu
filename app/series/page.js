@@ -21,7 +21,6 @@ export default async function SeriesPage({ searchParams }) {
   const params = await searchParams;
   const paginaActual = Number(params?.page) || 1;
   const busqueda = params?.busqueda || '';
-  const letra = params?.letra || '';
   const porPagina = 24;
   const offset = (paginaActual - 1) * porPagina;
 
@@ -40,20 +39,7 @@ export default async function SeriesPage({ searchParams }) {
       args: [`%${busqueda.toLowerCase()}%`]
     });
     totalSeries = Number(totalResultado.rows[0].count);
-  } else if (letra) {
-    const resultado = await sql.execute({
-      sql: "SELECT * FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' AND LOWER(nombre) LIKE ? ORDER BY id LIMIT ? OFFSET ?",
-      args: [`${letra.toLowerCase()}%`, porPagina, offset]
-    });
-    seriesPaginadas = resultado.rows;
-
-    const totalResultado = await sql.execute({
-      sql: "SELECT COUNT(*) as count FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' AND LOWER(nombre) LIKE ?",
-      args: [`${letra.toLowerCase()}%`]
-    });
-    totalSeries = Number(totalResultado.rows[0].count);
   } else {
-    // AQUÍ ESTABA EL DETALLE: Ahora también filtramos estrictamente por (series) por defecto
     const resultado = await sql.execute({
       sql: "SELECT * FROM peliculas WHERE LOWER(nombre) LIKE '%(series)%' ORDER BY id LIMIT ? OFFSET ?",
       args: [porPagina, offset]
@@ -67,109 +53,126 @@ export default async function SeriesPage({ searchParams }) {
   }
 
   const totalPaginas = Math.ceil(totalSeries / porPagina) || 1;
-  const abecedario = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 
   return (
-    <main className="min-h-screen bg-[#090d16] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
+    <main className="min-h-screen bg-[#030305] text-white flex flex-col justify-between selection:bg-red-600 selection:text-white">
       <div>
-        <header className="w-full bg-[#070b14] border-b border-zinc-800/80 pt-8 pb-6 px-6 relative overflow-hidden">
-          <div className="max-w-[1400px] mx-auto flex flex-col items-center text-center">
-            <Link href="/" className="text-2xl md:text-3xl font-black tracking-widest text-red-600 mb-2">CineChapu</Link>
-            <p className="text-zinc-400 text-xs md:text-sm mb-6 font-medium">Peliculas, Series & Animes</p>
+        {/* Header Estilo Streaming Pro con Navegación Horizontal y Fondo Negro Profundo */}
+        <header className="w-full bg-[#030305]/90 border-b border-zinc-900/80 py-3.5 px-6 sticky top-0 z-50 backdrop-blur-xl">
+          <div className="max-w-[1500px] mx-auto flex items-center justify-between gap-4">
             
-            <form action="/" method="GET" className="w-full max-w-2xl relative mb-6">
+            {/* Logo y Eslogan Minimalista */}
+            <div className="flex items-center gap-3 shrink-0">
+              <Link href="/" className="text-xl md:text-2xl font-black tracking-wider text-red-600 flex items-center gap-1.5">
+                <span className="bg-red-600 text-white p-1 rounded-md text-xs">🎬</span> CineChapu
+              </Link>
+            </div>
+
+            {/* Menú de Navegación en Cápsula */}
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2 bg-[#111827]/70 border border-zinc-800/80 px-3 py-1.5 rounded-full shadow-inner">
+              <Link href="/" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🏠</span> Inicio
+              </Link>
+              <Link href="/peliculas" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🍿</span> Películas
+              </Link>
+              <Link href="/series" className="px-3 py-1 rounded-full text-xs font-medium text-white bg-zinc-800/90 transition-all flex items-center gap-1.5">
+                <span>📺</span> Series
+              </Link>
+              <Link href="/animacion" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>⚡</span> Animación
+              </Link>
+              <Link href="/sagas" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🔮</span> Sagas
+              </Link>
+              <Link href="/favoritos" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>💖</span> Favoritos
+              </Link>
+              <Link href="/actores" className="px-3 py-1 rounded-full text-xs font-medium text-zinc-300 hover:text-white hover:bg-zinc-800/80 transition-all flex items-center gap-1.5">
+                <span>🎭</span> Actores
+              </Link>
+            </nav>
+
+            {/* Buscador Estilizado */}
+            <form action="/series" method="GET" className="relative w-44 sm:w-60 shrink-0">
               <input 
                 type="text" 
                 name="busqueda" 
                 defaultValue={busqueda}
-                placeholder="Search..." 
-                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-6 py-3 text-sm text-zinc-200 focus:outline-none focus:border-red-600 transition-colors shadow-2xl pl-6 pr-12"
+                placeholder="Buscar series..." 
+                className="w-full bg-[#111a2e] border border-zinc-700/80 rounded-full px-4 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-red-600 transition-all shadow-sm pr-9 placeholder:text-zinc-500"
               />
-              <button type="submit" className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer">
+              <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer text-xs">
                 🔍
               </button>
             </form>
-
-            <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs md:text-sm text-zinc-400 font-medium my-4">
-              <Link href="/" className="hover:text-white transition-colors">🏠 Inicio</Link>
-              <Link href="/peliculas" className="hover:text-white transition-colors">🎬 Peliculas</Link>
-              <Link href="/series" className="hover:text-white transition-colors">📺 Series</Link>
-              <Link href="/animacion" className="hover:text-white transition-colors">🚀 Animacion</Link>
-              <Link href="/sagas" className="hover:text-white transition-colors">🔥 Sagas</Link>
-              <Link href="/favoritos" className="hover:text-white transition-colors">❤️ Favoritos</Link>
-              <Link href="/actores">🎭Actores</Link>
-            </nav>
           </div>
+
+          {/* Menú inferior deslizable para pantallas medianas o celulares */}
+          <nav className="flex lg:hidden items-center justify-start sm:justify-center gap-2 text-xs text-zinc-300 font-medium mt-3 pt-2.5 border-t border-zinc-800/50 overflow-x-auto pb-1 scrollbar-none">
+            <Link href="/" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🏠 Inicio</Link>
+            <Link href="/peliculas" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🍿 Películas</Link>
+            <Link href="/series" className="px-2.5 py-1 bg-red-600 text-white rounded-md whitespace-nowrap">📺 Series</Link>
+            <Link href="/animacion" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">⚡ Animación</Link>
+            <Link href="/sagas" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🔮 Sagas</Link>
+            <Link href="/favoritos" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">💖 Favoritos</Link>
+            <Link href="/actores" className="px-2.5 py-1 bg-[#111827] rounded-md whitespace-nowrap">🎭 Actores</Link>
+          </nav>
         </header>
 
-        <section className="max-w-[1400px] mx-auto px-6 py-8">
-          <div className="flex flex-col lg:flex-row gap-8 items-start">
-            <div className="flex-1 w-full">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-zinc-800/40 text-xs">
-                <div className="text-zinc-400">
-                  <span className="text-red-500 font-semibold mr-2">Catálogo de Series</span>
-                  Mostrando <span className="text-white font-bold">{seriesPaginadas.length}</span> de <span className="text-white font-bold">{totalSeries}</span>
-                </div>
-                {(busqueda || letra) && (
-                  <Link href="/series" className="text-xs text-red-400 hover:underline">Limpiar filtros ✕</Link>
-                )}
+        <section className="max-w-[1500px] mx-auto px-6 py-8">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center justify-between bg-[#111827]/50 border border-zinc-800/80 rounded-xl p-4 backdrop-blur shadow-lg">
+              <div className="text-xs text-zinc-400">
+                <span className="text-red-500 font-semibold mr-2">Catálogo de Series</span>
+                Mostrando <span className="text-white font-bold">{seriesPaginadas.length}</span> de <span className="text-white font-bold">{totalSeries}</span>
               </div>
-
-              {seriesPaginadas.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                  {seriesPaginadas.map((serie) => (
-                    <Link 
-                      key={serie.id} 
-                      href={`/pelicula/${serie.id}`}
-                      className="bg-[#131b2e]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
-                    >
-                      <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
-                        <img src={serie.foto || imagenGenerica} alt={serie.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
-                      </div>
-                      <div className="p-2.5 flex-1 flex flex-col justify-between">
-                        <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(serie.nombre)}</h3>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-20 text-zinc-500 bg-[#131b2e]/30 rounded-lg border border-zinc-800/40">
-                  No se encontraron series.
-                </div>
+              {busqueda && (
+                <Link href="/series" className="text-xs text-red-400 hover:underline">Limpiar filtro ✕</Link>
               )}
-
-              <div className="flex justify-center items-center gap-3 mt-12 mb-8">
-                {paginaActual > 1 ? (
-                  <Link href={`/series?page=${paginaActual - 1}${busqueda ? `&busqueda=${busqueda}` : ''}${letra ? `&letra=${letra}` : ''}`} className="bg-[#131b2e] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-4 py-1.5 rounded text-xs font-medium">← Anterior</Link>
-                ) : (
-                  <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">← Anterior</span>
-                )}
-                <span className="text-xs text-zinc-400">Página <strong className="text-white">{paginaActual}</strong> de {totalPaginas}</span>
-                {paginaActual < totalPaginas ? (
-                  <Link href={`/series?page=${paginaActual + 1}${busqueda ? `&busqueda=${busqueda}` : ''}${letra ? `&letra=${letra}` : ''}`} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-xs font-medium">Siguiente →</Link>
-                ) : (
-                  <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">Siguiente →</span>
-                )}
-              </div>
             </div>
 
-            <aside className="w-full lg:w-72 shrink-xl flex flex-col gap-6 sticky top-24">
-              <div className="bg-[#131b2e]/50 border border-zinc-800/80 rounded-xl p-4 shadow-lg backdrop-blur">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 mb-3 pb-2 border-b border-zinc-800">Filtrar por Letra</h3>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {abecedario.map((l) => (
-                    <Link key={l} href={`/series?letra=${l}`} className={`text-center text-xs font-bold py-1.5 rounded transition-colors ${letra === l ? 'bg-red-600 text-white' : 'bg-[#090d16] hover:bg-zinc-800 border border-zinc-800/80 text-zinc-300'}`}>
-                      {l}
-                    </Link>
-                  ))}
-                </div>
+            {seriesPaginadas.length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                {seriesPaginadas.map((serie) => (
+                  <Link 
+                    key={serie.id} 
+                    href={`/pelicula/${serie.id}`}
+                    className="bg-[#111827]/60 rounded-lg overflow-hidden border border-zinc-800/80 transition-all duration-200 hover:scale-105 hover:border-zinc-700 shadow-lg flex flex-col group"
+                  >
+                    <div className="aspect-[2/3] w-full bg-zinc-900 relative overflow-hidden">
+                      <img src={serie.foto || imagenGenerica} alt={serie.nombre} className="object-cover w-full h-full group-hover:opacity-90 transition-opacity" />
+                    </div>
+                    <div className="p-2.5 flex-1 flex flex-col justify-between">
+                      <h3 className="text-[11px] font-medium text-zinc-300 line-clamp-2 leading-snug">{limpiarNombre(serie.nombre)}</h3>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </aside>
+            ) : (
+              <div className="text-center py-20 text-zinc-500 bg-[#111827]/30 rounded-lg border border-zinc-800/40">
+                No se encontraron series.
+              </div>
+            )}
+
+            <div className="flex justify-center items-center gap-3 mt-12 mb-8">
+              {paginaActual > 1 ? (
+                <Link href={`/series?page=${paginaActual - 1}${busqueda ? `&busqueda=${busqueda}` : ''}`} className="bg-[#111827] hover:bg-zinc-800 border border-zinc-800 text-zinc-300 px-4 py-1.5 rounded text-xs font-medium">← Anterior</Link>
+              ) : (
+                <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">← Anterior</span>
+              )}
+              <span className="text-xs text-zinc-400">Página <strong className="text-white">{paginaActual}</strong> de {totalPaginas}</span>
+              {paginaActual < totalPaginas ? (
+                <Link href={`/series?page=${paginaActual + 1}${busqueda ? `&busqueda=${busqueda}` : ''}`} className="bg-red-600 hover:bg-red-700 text-white px-4 py-1.5 rounded text-xs font-medium">Siguiente →</Link>
+              ) : (
+                <span className="bg-[#0f1523] border border-zinc-900 text-zinc-700 px-4 py-1.5 rounded text-xs cursor-not-allowed">Siguiente →</span>
+              )}
+            </div>
           </div>
         </section>
       </div>
 
-      <footer className="w-full border-t border-zinc-800/40 bg-[#090d16] py-6 text-center text-xs text-zinc-500">
+      <footer className="w-full border-t border-zinc-900/60 bg-[#030305] py-6 text-center text-xs text-zinc-500">
         <p>CineChapu — Todos los derechos reservados</p>
       </footer>
     </main>
