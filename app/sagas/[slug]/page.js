@@ -1,12 +1,9 @@
+import { db as sql } from "../../db";
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
 import PeliculaCard from '../../components/PeliculaCard';
 import VolverSagas from '../../components/VolverSagas';
 
-const sql = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
 
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
 

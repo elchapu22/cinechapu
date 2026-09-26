@@ -1,0 +1,16 @@
+app = "cinechapu"  # (Acá pon el nombre exacto de tu app si elegiste otro en la página de Fly)
+primary_region = "ams" # O la región que hayas seleccionado al crear la app
+
+[build]
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[mounts]
+  source = "cinechapu_data"
+  destination = "/app/data"

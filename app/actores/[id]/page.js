@@ -1,10 +1,7 @@
 import { createClient } from "@libsql/client";
 import Link from "next/link";
+import { db as sql } from "@/app/db";
 
-const sql = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
 
 export default async function ActorPage({ params }) {
   const { id } = await params;

@@ -1,11 +1,6 @@
-import { createClient } from '@libsql/client';
 import Link from 'next/link';
 import BuscadorActores from './BuscadorActores';
-
-const db = createClient({
-  url: "libsql://catalogo-peliculas-chapu.aws-us-east-1.turso.io",
-  authToken: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3ODUzOTQxNDUsImlkIjoiMDE5ZmIxYzUtMzYwMS03YmM0LTk4ZGYtNWYzNDg4Y2FhZWRjIiwia2lkIjoiOVBRb1FvLUMtdzh5bWFQeWt5dlI3WnBWUXY1ck10M3I4VVdkUHJuakRMUSIsInJpZCI6IjU4ZmJkMDljLWNlMmUtNGJjZS04YjU1LTdkNDUyOTgzYWIxMyJ9.Q80179N0HQxJCmS1H6gsng_iRYPOEx4hXZC6YTZ5uvBhynpgd9Q9wpx90hPB1hZxVnB_MW6vnareXzdZXfU1Dg"
-});
+import { db as sql } from "@/app/db";
 
 export default async function ActoresPage() {
   // Traemos todas las películas para extraer los actores
