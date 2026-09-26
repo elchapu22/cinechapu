@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '../../../db'; // Importa tu conexión centralizada y segura
+import { db } from '../db'; // Importa tu conexión centralizada y segura
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
