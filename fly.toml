@@ -1,4 +1,4 @@
-app = "cinechapu"  # (Acá pon el nombre exacto de tu app si elegiste otro en la página de Fly)
+app = "cinechapu-app"  # (Acá pon el nombre exacto de tu app si elegiste otro en la página de Fly)
 primary_region = "ams" # O la región que hayas seleccionado al crear la app
 
 [build]
