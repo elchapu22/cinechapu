@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from "@libsql/client";
 
+// Forzar que esta ruta sea 100% dinámica y nunca se ejecute en el build
+export const dynamic = 'force-dynamic';
+
 const db = createClient({
   url: process.env.TURSO_DATABASE_URL,
   authToken: process.env.TURSO_AUTH_TOKEN,
