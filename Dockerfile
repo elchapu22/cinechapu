@@ -1,9 +1,12 @@
 FROM node:20-alpine
 
-# Instalar dependencias del sistema necesarias para compilar paquetes nativos (como SQLite)
+# Instalar dependencias del sistema necesarias para compilar paquetes nativos
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
+
+# Crear el directorio de datos para el volumen persistente
+RUN mkdir -p /app/data
 
 # Copiar archivos de dependencias
 COPY package*.json ./
