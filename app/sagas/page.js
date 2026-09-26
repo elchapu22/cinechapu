@@ -1,7 +1,7 @@
 import { db as sql } from "@/lib/db";
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
-
+export const dynamic = 'force-dynamic';
 
 const imagenGenerica = "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=600&auto=format&fit=crop";
 

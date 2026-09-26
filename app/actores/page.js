@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import BuscadorActores from './BuscadorActores';
 import { db } from "@/lib/db";
+export const dynamic = 'force-dynamic';
 
 export default async function ActoresPage() {
   // Traemos todas las películas para extraer los actores

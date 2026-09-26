@@ -3,6 +3,7 @@ import { createClient } from "@libsql/client";
 import Link from 'next/link';
 import PeliculaCardPro from '../components/PeliculaCardPro';
 import FiltrosPeliculas from '../components/FiltrosPeliculas';
+export const dynamic = 'force-dynamic';
 
 const limpiarNombre = (nombre) => {
   if (!nombre) return '';

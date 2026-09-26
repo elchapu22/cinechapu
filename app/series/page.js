@@ -1,6 +1,7 @@
 import { db as sql } from "@/lib/db";
 import { createClient } from "@libsql/client";
 import Link from 'next/link';
+export const dynamic = 'force-dynamic';
 
 const limpiarNombre = (nombre) => {
   if (!nombre) return '';
