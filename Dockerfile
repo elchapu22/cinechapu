@@ -1,20 +1,22 @@
 FROM node:20-alpine
 
+# Instalar dependencias del sistema necesarias para compilar paquetes nativos (como SQLite)
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
-# Copiar dependencias
+# Copiar archivos de dependencias
 COPY package*.json ./
 RUN npm install
 
-# Copiar el resto del código (incluyendo la base de datos local)
+# Copiar el resto del código
 COPY . .
 
-# Compilar la aplicación Next.js de forma limpia
+# Compilar la aplicación Next.js
 RUN npm run build
 
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Arrancar la app
 CMD ["npm", "start"]
