@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db } from "@/lib/db";
 import { createClient } from '@libsql/client';
 import Link from 'next/link';
 import PeliculaCard from './components/PeliculaCard';
