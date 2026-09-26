@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import BuscadorActores from './BuscadorActores';
-import { db as sql } from "@/app/db";
+import { db as sql } from "@/lib/db";
 
 export default async function ActoresPage() {
   // Traemos todas las películas para extraer los actores

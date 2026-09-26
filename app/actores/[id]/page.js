@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import Link from "next/link";
-import { db as sql } from "@/app/db";
+import { db as sql } from "@/lib/db";
 
 
 export default async function ActorPage({ params }) {
