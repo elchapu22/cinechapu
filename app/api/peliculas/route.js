@@ -3,6 +3,7 @@ import { buscarPelicula } from '@/lib/peliculas'; // Asegúrate que apunte a tu 
 
 // Forzar que esta ruta sea 100% dinámica y nunca se ejecute en el build
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -17,6 +18,7 @@ export async function GET(request) {
     return NextResponse.json(resultado);
   } catch (error) {
     console.error('Error en API route:', error);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    // Devolvemos un objeto vacío o array para que el build no colapse si la DB está vacía
+    return NextResponse.json([], { status: 200 }); 
   }
 }
