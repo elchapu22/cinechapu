@@ -6,12 +6,16 @@ import Link from 'next/link';
 export default async function DetallePeliculaPage({ params }) {
   const { id } = await params;
 
+  console.log("🎯 ID recibido por URL en Next.js:", id);
+
   // 1. Traemos la película de la base de datos
   const resultadoPelicula = await sql.execute({
     sql: "SELECT * FROM peliculas WHERE id = ?",
     args: [id]
   });
   
+  console.log("🎯 Resultado de la consulta de la película:", resultadoPelicula);
+
   const pelicula = resultadoPelicula.rows[0];
 
   if (!pelicula) {
